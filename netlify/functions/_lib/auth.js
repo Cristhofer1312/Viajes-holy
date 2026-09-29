@@ -7,7 +7,12 @@
 // Supabase (verificarAuth) y el manejo de respuestas HTTP.
 
 const { supabase } = require('./supabase');
-const Roles = require('../../../src/js/roles.js');
+let Roles = { RANGO: {}, REGLAS: {}, puede: () => false };
+try {
+  Roles = require('../../../src/js/roles.js');
+} catch (e) {
+  console.error('Error cargando roles.js:', e);
+}
 
 const RANGO = Roles.RANGO;
 const puede = Roles.puede;

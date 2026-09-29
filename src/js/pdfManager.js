@@ -17,25 +17,38 @@
       });
     }
 
-    // MODO NAVEGADOR: aviso + imprimir
-    root.toast?.('ℹ️ Usa el .exe para guardar. Abriendo diálogo de impresión…');
+    // MODO NAVEGADOR: imprimir sin toast visible.
+    // El toast tapaba la franja "NO INCLUYE" y salía impreso en el PDF
+    // porque @media print no lo ocultaba a tiempo. Se oculta antes de
+    // abrir el diálogo y se deja repintar antes de window.print().
+    if (root.ocultarToast) root.ocultarToast();
+    var toastEl = document.getElementById('toast');
+    if (toastEl) toastEl.classList.remove('show');
     return imprimir();
   }
 
   function imprimir() {
     document.body.classList.add('printing');
+    if (root.ocultarToast) root.ocultarToast();
+    var toastEl = document.getElementById('toast');
+    if (toastEl) toastEl.classList.remove('show');
     var p = new Promise(function (resolve) {
+      var done = false;
       var restaurar = function () {
+        if (done) return;
+        done = true;
         document.body.classList.remove('printing');
         resolve();
       };
+      window.addEventListener('afterprint', restaurar, { once: true });
       window.setTimeout(function () {
         try {
           window.print();
         } finally {
-          restaurar();
+          // Fallback por si afterprint no dispara en ese navegador
+          window.setTimeout(restaurar, 1000);
         }
-      }, 50);
+      }, 350);
     });
     return p;
   }

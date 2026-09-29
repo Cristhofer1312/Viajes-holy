@@ -154,7 +154,11 @@ html.dark ::-webkit-scrollbar-thumb {
   }
 
   .no-print,
-  .form-panel {
+  .form-panel,
+  .toast,
+  #toast,
+  #confirm-modal,
+  #import-modal {
     display: none !important;
   }
 
@@ -223,5 +227,26 @@ html.dark ::-webkit-scrollbar-thumb {
     print-color-adjust: exact;
   }
 }
-/* Forzar tipografia Montserrat muy gruesa en todas las plantillas */
-.page-sheet, .page-sheet * { font-family: 'Montserrat', sans-serif !important; font-weight: 900 !important; }
+/* Tipografía de plantillas: Montserrat sin forzar grosor global.
+   El grosor lo define cada clase (font-black/font-extrabold); forzarlo aquí
+   ensanchaba el texto distinto por equipo y rompía el A4 fijo. */
+.page-sheet, .page-sheet * { font-family: 'Montserrat', sans-serif !important; }
+.page-sheet { font-weight: 900; }
+
+/* Fallback crítico: si el JIT de Tailwind no resolvió las clases inyectadas
+   por preview.js en ese equipo, la grilla A4 sigue armada con CSS plano. */
+.page-sheet .grid { display: grid; }
+.page-sheet .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.page-sheet .col-span-1 { grid-column: span 1 / span 1; }
+.page-sheet .col-span-2 { grid-column: span 2 / span 2; }
+.page-sheet .col-span-3 { grid-column: span 3 / span 3; }
+.page-sheet .col-span-4 { grid-column: span 4 / span 4; }
+.page-sheet .col-span-6 { grid-column: span 6 / span 6; }
+.page-sheet .col-span-8 { grid-column: span 8 / span 8; }
+.page-sheet .flex { display: flex; }
+.page-sheet .items-center { align-items: center; }
+.page-sheet .items-start { align-items: flex-start; }
+.page-sheet .justify-between { justify-content: space-between; }
+.page-sheet .justify-end { justify-content: flex-end; }
+.page-sheet .min-w-0 { min-width: 0; }
+.page-sheet img { max-width: 100%; }

@@ -73,7 +73,10 @@
   }
 
   function banderaNoIncluye() {
-    return '<div class="w-full bg-holyPurple text-white text-center py-4 rounded-b-2xl shadow-sm" style="width: calc(100% + 6rem); margin-left: -3rem; margin-right: -3rem;">' +
+    // Sin width:calc() frágil: la franja se estira con márgenes negativos
+    // simétricos al px-12 del page-sheet. Así no desborda si Tailwind
+    // tarda o si el box-sizing difiere entre equipos.
+    return '<div class="w-full bg-holyPurple text-white text-center py-4 rounded-b-2xl shadow-sm" style="display:block; width:auto; margin-left:-3rem; margin-right:-3rem;">' +
       '<p class="font-montserrat font-black text-[14px] tracking-wider uppercase">NO INCLUYE IMPUESTO DE ENTRADA AL PARQUE</p></div>';
   }
 

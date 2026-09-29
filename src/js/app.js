@@ -537,7 +537,14 @@
     if (!stage) return;
     requestAnimationFrame(function () {
       var w = stage.clientWidth;
+      // Si el stage aún está oculto (clientWidth 0), reintentar cuando pinte.
+      // Antes quedaba escala 0/sucia solo en algunos equipos por timing.
+      if (!w) {
+        window.setTimeout(function () { fitStage(stageId); }, 120);
+        return;
+      }
       var s = Math.min(1, w / 794);
+      if (!isFinite(s) || s <= 0) s = 1;
       stage.querySelectorAll('.scale-box').forEach(function (b) {
         b.style.setProperty('--s', s.toFixed(4));
       });
@@ -550,6 +557,33 @@
         }
       });
     });
+  }
+
+  // Re-ajusta la escala cuando cambian las condiciones de render de ese equipo:
+  // resize, carga tardía de Montserrat (woff2) o de fotos de Supabase.
+  var stageObserver = null;
+  function watchStages() {
+    ['stage-plantillas', 'stage-cotizacion'].forEach(fitStage);
+    if (stageObserver) return;
+    if (typeof ResizeObserver !== 'undefined') {
+      stageObserver = new ResizeObserver(function () {
+        ['stage-plantillas', 'stage-cotizacion'].forEach(fitStage);
+      });
+      ['stage-plantillas', 'stage-cotizacion'].forEach(function (id) {
+        var el = $(id);
+        if (el) stageObserver.observe(el);
+      });
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        ['stage-plantillas', 'stage-cotizacion'].forEach(fitStage);
+      });
+    }
+    document.addEventListener('load', function (e) {
+      if (e.target && e.target.tagName === 'IMG') {
+        ['stage-plantillas', 'stage-cotizacion'].forEach(fitStage);
+      }
+    }, true);
   }
 
   function setPageMode(stageId, m) {
@@ -1191,6 +1225,7 @@
     window.addEventListener('resize', function () {
       ['stage-plantillas', 'stage-cotizacion'].forEach(fitStage);
     });
+    watchStages();
 
     var toastEl = $('toast');
     if (toastEl) toastEl.addEventListener('click', ocultarToast);

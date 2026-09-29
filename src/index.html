@@ -329,6 +329,18 @@
                                 <p
                                     class="text-[11px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-2">
                                     Vuelo Ida</p>
+                                <div class="mb-2 rounded-xl bg-white dark:bg-[#2a2a2a] border border-dashed border-holyPurple/40 dark:border-primary/40 p-2">
+                                    <label
+                                        class="block text-[10px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-1">Pegar
+                                        texto del vuelo (Ida)</label>
+                                    <div class="flex gap-1">
+                                        <input id="q-paste-ida" type="text" placeholder="Ej: CV1723M 23OCT FR CCSLRV SS1 0945 1025"
+                                            class="flex-1 min-w-0 rounded-lg border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-[11px] font-mono uppercase">
+                                        <button id="btn-paste-ida" type="button"
+                                            class="shrink-0 rounded-lg bg-holyPurple dark:bg-primary text-white text-[10px] font-extrabold px-2.5 py-1.5 uppercase hover:opacity-90">Rellenar</button>
+                                    </div>
+                                    <p id="q-paste-ida-msg" class="hidden mt-1 text-[10px] font-bold"></p>
+                                </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <label
@@ -380,6 +392,18 @@
                                 <p
                                     class="text-[11px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-2">
                                     Vuelo Retorno</p>
+                                <div class="mb-2 rounded-xl bg-white dark:bg-[#2a2a2a] border border-dashed border-holyPurple/40 dark:border-primary/40 p-2">
+                                    <label
+                                        class="block text-[10px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-1">Pegar
+                                        texto del vuelo (Retorno)</label>
+                                    <div class="flex gap-1">
+                                        <input id="q-paste-ret" type="text" placeholder="Ej: CV1724M 24OCT SA LRVCCS SS1 1100 1150"
+                                            class="flex-1 min-w-0 rounded-lg border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-[11px] font-mono uppercase">
+                                        <button id="btn-paste-ret" type="button"
+                                            class="shrink-0 rounded-lg bg-holyPurple dark:bg-primary text-white text-[10px] font-extrabold px-2.5 py-1.5 uppercase hover:opacity-90">Rellenar</button>
+                                    </div>
+                                    <p id="q-paste-ret-msg" class="hidden mt-1 text-[10px] font-bold"></p>
+                                </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <label
@@ -931,6 +955,7 @@
     <script src="js/pdfManager.js?v=5"></script>
     <script src="js/userService.js?v=1"></script>
     <script src="js/gestion.js?v=2"></script>
+    <script src="js/flightParser.js?v=1"></script>
     <script src="js/app.js?v=7"></script>
 
 </body>

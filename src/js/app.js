@@ -713,6 +713,14 @@
     list.innerHTML = state.vuelosDinamicos.map(function (v, i) {
       return '<div class="rounded-xl border border-holyPurple/20 bg-white dark:bg-[#2a2a2a] dark:border-[#333333] p-3 space-y-2 relative" data-index="' + i + '">' +
         '<button data-act="del-vuelo" data-i="' + i + '" class="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold">✕</button>' +
+        '<div class="rounded-lg border border-dashed border-holyPurple/40 dark:border-primary/40 p-2">' +
+        '  <label class="block text-[10px] font-extrabold text-holyPurple dark:text-primaryLight uppercase mb-1">Pegar texto del vuelo</label>' +
+        '  <div class="flex gap-1">' +
+        '    <input type="text" placeholder="Ej: CV1723M 23OCT FR CCSLRV SS1 0945 1025" class="vd-paste flex-1 min-w-0 rounded-lg border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-[11px] font-mono uppercase">' +
+        '    <button data-act="paste-vuelo" data-i="' + i + '" class="shrink-0 rounded-lg bg-holyPurple dark:bg-primary text-white text-[10px] font-extrabold px-2.5 py-1.5 uppercase hover:opacity-90">Rellenar</button>' +
+        '  </div>' +
+        '  <p class="vd-paste-msg hidden mt-1 text-[10px] font-bold"></p>' +
+        '</div>' +
         '<div class="grid grid-cols-3 gap-2">' +
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Tipo</label>' +
         '  <select class="vd-tipo w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-xs input-track">' +
@@ -772,6 +780,92 @@
       });
     });
     state.vuelosDinamicos = arr;
+  }
+
+  // ------------------------------------------------- PEGADO INTELIGENTE
+  function pasteMsg(id, ok, text) {
+    var el = id ? $(id) : null;
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('hidden');
+    el.className = el.className.replace(/text-(green|red)-\d+/g, '').trim();
+    el.style.color = ok ? '#15803d' : '#dc2626';
+  }
+
+  function applyParsedToStatic(which, p) {
+    var isIda = which === 'ida';
+    var pre = isIda ? 'q-origen-ida' : 'q-destino-ret';
+    var fId = isIda ? 'q-fecha-ida' : 'q-fecha-ret';
+    var sId = isIda ? 'q-salida-ida' : 'q-salida-ret';
+    var lId = isIda ? 'q-llegada-ida' : 'q-llegada-ret';
+    var fixedId = isIda ? 'q-destino-ida' : 'q-origen-ret';
+    var fixedCode = isIda ? p.destinoCode : p.origenCode;
+    var fixedName = isIda ? p.destino : p.origen;
+
+    var aero = $('q-aerolinea');
+    if (aero) aero.value = p.aerolinea;
+    var oEl = $(pre);
+    if (oEl) oEl.value = isIda ? p.origen : p.destino;
+    var fEl = $(fId);
+    if (fEl) fEl.value = p.fechaISO;
+    var sEl = $(sId);
+    if (sEl) sEl.value = p.salida;
+    var lEl = $(lId);
+    if (lEl) lEl.value = p.llegada;
+
+    // El campo fijo (destino Ida / origen Retorno) viene de la posada:
+    // solo se valida y se avisa si difiere, no se sobrescribe.
+    var notes = [];
+    var fixedEl = $(fixedId);
+    if (fixedEl && fixedEl.value && fixedEl.value.toUpperCase() !== fixedName.toUpperCase() &&
+        fixedEl.value.toUpperCase() !== fixedCode.toUpperCase()) {
+      notes.push('verifica destino fijo (' + fixedEl.value + ' vs ' + fixedName + ')');
+    }
+    if (!p.aerolineaRegistrada) notes.push('código ' + p.aerolineaCode + ' no registrado');
+    updateDuracionStatic();
+    scheduleQuote();
+    return notes;
+  }
+
+  function handlePasteStatic(which) {
+    if (!window.FlightParser) { showToast('Parser de vuelos no cargado'); return; }
+    var input = $(which === 'ida' ? 'q-paste-ida' : 'q-paste-ret');
+    var msgId = which === 'ida' ? 'q-paste-ida-msg' : 'q-paste-ret-msg';
+    var p = window.FlightParser.parseFlightLine(input ? input.value : '');
+    if (p.error) { pasteMsg(msgId, false, p.error); return; }
+    var notes = applyParsedToStatic(which, p);
+    var txt = '✓ ' + p.origen + ' → ' + p.destino + ' · ' + p.fechaISO + ' · ' + p.salida + '-' + p.llegada + ' · ' + p.aerolinea;
+    if (notes.length) txt += ' (' + notes.join(', ') + ')';
+    pasteMsg(msgId, true, txt);
+    showToast('Vuelo ' + (which === 'ida' ? 'Ida' : 'Retorno') + ' rellenado');
+  }
+
+  function handlePasteDinamico(idx, row) {
+    if (!window.FlightParser) { showToast('Parser de vuelos no cargado'); return; }
+    var input = row ? row.querySelector('.vd-paste') : null;
+    var msgEl = row ? row.querySelector('.vd-paste-msg') : null;
+    var p = window.FlightParser.parseFlightLine(input ? input.value : '');
+    var show = function (ok, t) {
+      if (!msgEl) return;
+      msgEl.textContent = t;
+      msgEl.classList.remove('hidden');
+      msgEl.style.color = ok ? '#15803d' : '#dc2626';
+    };
+    if (p.error) { show(false, p.error); return; }
+    syncVuelosDinamicos();
+    var v = state.vuelosDinamicos[idx];
+    if (!v) return;
+    v.origen = p.origen;
+    v.destino = p.destino;
+    v.fecha = p.fechaISO;
+    v.salida = p.salida;
+    v.llegada = p.llegada;
+    v.duracion = calcularDuracion(p.salida, p.llegada);
+    var aero = $('q-aerolinea');
+    if (aero) aero.value = p.aerolinea;
+    renderVuelosDinamicosUI();
+    scheduleQuote();
+    showToast('Vuelo ' + (idx + 1) + ' rellenado: ' + p.origen + ' → ' + p.destino);
   }
 
   function rebuildCotizacion() {
@@ -1129,6 +1223,13 @@
           state.vuelosDinamicos.splice(idx, 1);
           renderVuelosDinamicosUI();
           scheduleQuote();
+          return;
+        }
+        var pasteBtn = e.target.closest('[data-act="paste-vuelo"]');
+        if (pasteBtn) {
+          var pIdx = Number(pasteBtn.dataset.i);
+          var row = pasteBtn.closest('[data-index]');
+          handlePasteDinamico(pIdx, row);
         }
       });
     }
@@ -1147,6 +1248,15 @@
         scheduleQuote();
       });
     }
+
+    var btnPasteIda = $('btn-paste-ida');
+    if (btnPasteIda) btnPasteIda.addEventListener('click', function () { handlePasteStatic('ida'); });
+    var btnPasteRet = $('btn-paste-ret');
+    if (btnPasteRet) btnPasteRet.addEventListener('click', function () { handlePasteStatic('retorno'); });
+    var pasteIdaInput = $('q-paste-ida');
+    if (pasteIdaInput) pasteIdaInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); handlePasteStatic('ida'); } });
+    var pasteRetInput = $('q-paste-ret');
+    if (pasteRetInput) pasteRetInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); handlePasteStatic('retorno'); } });
 
     $('btn-pdf-save').addEventListener('click', function () { PdfManager.guardarPDF(); });
     $('btn-pdf-print').addEventListener('click', function () { PdfManager.imprimir(); });

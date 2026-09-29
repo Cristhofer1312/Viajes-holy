@@ -83,6 +83,90 @@
   // ---- PÁGINA 1 ----
   function renderPage1(t, q) {
     var v = q.vuelo || { ida: {}, retorno: {} };
+    var tipo = (q.tipoPaquete || '').toUpperCase();
+    var esSoloHospedaje = tipo === 'SOLO HOSPEDAJE';
+    var esSoloVuelo = tipo === 'SOLO VUELO';
+
+    // Sección AÉREO (oculta en SOLO HOSPEDAJE)
+    var seccionAereo = '';
+    if (!esSoloHospedaje) {
+      var vuelosDin = v.dinamicos && v.dinamicos.length > 0;
+      var filasDinamicas = '';
+      if (vuelosDin) {
+        filasDinamicas = v.dinamicos.map(function (vd) {
+          var esRetorno = vd.tipo === 'RETORNO';
+          return '<div class="vuelo-line text-[13px]">' +
+            '<div class="v-avion">' + avionIcon(esRetorno) + '</div>' +
+            '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">' + esc(vd.tipo) + '</span></div>' +
+            '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(vd.origen) + '</p>' +
+            '<p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(vd.destino) + '</p></div>' +
+            '<div class="v-clock">' + clockIcon(!esRetorno) + '</div>' +
+            '<div class="v-horas"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(vd.fecha) + '</p>' +
+            '<p class="text-holyGray font-montserrat font-black text-[12px]">SALIDA: ' + esc(vd.salida) + '</p>' +
+            '<p class="text-holyGray font-montserrat font-black text-[12px]">LLEGADA: ' + esc(vd.llegada) + '</p></div>' +
+            '</div>';
+        }).join('');
+      } else {
+        filasDinamicas =
+          '<div class="vuelo-line text-[13px]">' +
+          '<div class="v-avion">' + avionIcon(false) + '</div>' +
+          '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">IDA</span></div>' +
+          '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.ida.origen) + '</p>' +
+          '<p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.ida.destino) + '</p></div>' +
+          '<div class="v-clock">' + clockIcon(true) + '</div>' +
+          '<div class="v-horas"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.ida.fecha) + '</p>' +
+          '<p class="text-holyGray font-montserrat font-black text-[12px]">SALIDA: ' + esc(v.ida.salida) + '</p>' +
+          '<p class="text-holyGray font-montserrat font-black text-[12px]">LLEGADA: ' + esc(v.ida.llegada) + '</p></div>' +
+          '</div>' +
+          '<div class="vuelo-line text-[13px]">' +
+          '<div class="v-avion">' + avionIcon(true) + '</div>' +
+          '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">RETORNO</span></div>' +
+          '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.retorno.origen) + '</p>' +
+          '<p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.retorno.destino) + '</p></div>' +
+          '<div class="v-clock">' + clockIcon(false) + '</div>' +
+          '<div class="v-horas"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.retorno.fecha) + '</p>' +
+          '<p class="text-holyGray font-montserrat font-black text-[12px]">SALIDA: ' + esc(v.retorno.salida) + '</p>' +
+          '<p class="text-holyGray font-montserrat font-black text-[12px]">LLEGADA: ' + esc(v.retorno.llegada) + '</p></div>' +
+          '</div>';
+      }
+
+      seccionAereo =
+        '<div>' +
+        '<div class="flex items-baseline gap-2 mb-1">' +
+        '<span class="text-holyPurple font-montserrat font-black text-[15px] uppercase">AÉREO:</span>' +
+        '<span class="text-holyGray font-montserrat font-black text-[15px] uppercase">' + esc(v.aerolinea) + '</span></div>' +
+        '<div class="w-full h-[1.5px] bg-holyLine mb-6"></div>' +
+        '<div class="vuelo-wrap">' +
+        '<div class="vuelo-info">' + filasDinamicas + '</div>' +
+        '<div class="vuelo-img"><img src="assets/img/Asientos.png" alt="Asientos Ejecutivos"></div>' +
+        '</div></div>';
+    }
+
+    // Sección POSADA (oculta en SOLO VUELO)
+    var seccionPosada = '';
+    if (!esSoloVuelo) {
+      seccionPosada =
+        '<div>' +
+        '<div class="flex items-baseline gap-2 mb-1">' +
+        '<span class="text-holyPurple font-montserrat font-black text-[15px] uppercase">POSADA:</span>' +
+        '<span class="text-holyGray font-montserrat font-black text-[15px] uppercase">' + esc(t.nombrePosada) + '</span></div>' +
+        '<div class="w-full h-[1.5px] bg-holyLine mb-6"></div>' +
+        '<div class="space-y-5">' +
+        '<div class="grid grid-cols-12 items-center text-[13px]">' +
+        '<div class="col-span-1"><div class="w-10 h-10 bg-holyMintBright rounded-full flex items-center justify-center text-white shadow">' + flechaEntrada() + '</div></div>' +
+        '<div class="col-span-2 pl-2"><span class="text-holyGray font-montserrat font-black text-[13px]">CHECK <span class="font-montserrat font-black text-black">IN</span></span></div>' +
+        '<div class="col-span-3"><p class="text-holyPurple font-montserrat font-black text-[13px]">FECHA DE ENTRADA</p></div>' +
+        '<div class="col-span-3"><p class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkIn) + '</p></div>' +
+        '<div class="col-span-3 flex justify-start pl-4 flex items-center gap-2">' + clockIcon(true) + '<span class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkInHora) + '</span></div></div>' +
+        '<div class="grid grid-cols-12 items-center text-[13px]">' +
+        '<div class="col-span-1"><div class="w-10 h-10 bg-holyMintBright rounded-full flex items-center justify-center text-white shadow">' + flechaSalida() + '</div></div>' +
+        '<div class="col-span-2 pl-2"><span class="text-holyGray font-montserrat font-black text-[13px]">CHECK <span class="font-montserrat font-black text-black">OUT</span></span></div>' +
+        '<div class="col-span-3"><p class="text-holyPurple font-montserrat font-black text-[13px]">FECHA DE SALIDA</p></div>' +
+        '<div class="col-span-3"><p class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkOut) + '</p></div>' +
+        '<div class="col-span-3 flex justify-start pl-4 flex items-center gap-2">' + clockIcon(true) + '<span class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkOutHora) + '</span></div></div>' +
+        '</div></div>';
+    }
+
     return '' +
       '<div id="page1" class="page-sheet px-12 pt-12 flex flex-col justify-between">' +
       '<div class="flex-1 flex flex-col justify-between">' +
@@ -102,56 +186,8 @@
       '</div></div>' +
       '<div class="flex items-start pt-1"><img src="assets/img/ViajesHoly logo2.png" alt="Viajes Holy" class="h-20 w-auto"></div>' +
       '</div>' +
-      '<div>' +
-      '<div class="flex items-baseline gap-2 mb-1">' +
-      '<span class="text-holyPurple font-montserrat font-black text-[15px] uppercase">AÉREO:</span>' +
-      '<span class="text-holyGray font-montserrat font-black text-[15px] uppercase">' + esc(v.aerolinea) + '</span></div>' +
-      '<div class="w-full h-[1.5px] bg-holyLine mb-6"></div>' +
-      '<div class="vuelo-wrap">' +
-      '<div class="vuelo-info">' +
-      '<div class="vuelo-line text-[13px]">' +
-      '<div class="v-avion">' + avionIcon(false) + '</div>' +
-      '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">IDA</span></div>' +
-      '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.ida.origen) + '</p>' +
-      '<p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.ida.destino) + '</p></div>' +
-      '<div class="v-clock">' + clockIcon(true) + '</div>' +
-      '<div class="v-horas"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.ida.fecha) + '</p>' +
-      '<p class="text-holyGray font-montserrat font-black text-[12px]">SALIDA: ' + esc(v.ida.salida) + '</p>' +
-      '<p class="text-holyGray font-montserrat font-black text-[12px]">LLEGADA: ' + esc(v.ida.llegada) + '</p></div>' +
-      '</div>' +
-      '<div class="vuelo-line text-[13px]">' +
-      '<div class="v-avion">' + avionIcon(true) + '</div>' +
-      '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">RETORNO</span></div>' +
-      '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.retorno.origen) + '</p>' +
-      '<p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.retorno.destino) + '</p></div>' +
-      '<div class="v-clock">' + clockIcon(false) + '</div>' +
-      '<div class="v-horas"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.retorno.fecha) + '</p>' +
-      '<p class="text-holyGray font-montserrat font-black text-[12px]">SALIDA: ' + esc(v.retorno.salida) + '</p>' +
-      '<p class="text-holyGray font-montserrat font-black text-[12px]">LLEGADA: ' + esc(v.retorno.llegada) + '</p></div>' +
-      '</div>' +
-      '</div>' +
-      '<div class="vuelo-img">' +
-      '<img src="assets/img/Asientos.png" alt="Asientos Ejecutivos"></div>' +
-      '</div></div>' +
-      '<div>' +
-      '<div class="flex items-baseline gap-2 mb-1">' +
-      '<span class="text-holyPurple font-montserrat font-black text-[15px] uppercase">POSADA:</span>' +
-      '<span class="text-holyGray font-montserrat font-black text-[15px] uppercase">' + esc(t.nombrePosada) + '</span></div>' +
-      '<div class="w-full h-[1.5px] bg-holyLine mb-6"></div>' +
-      '<div class="space-y-5">' +
-      '<div class="grid grid-cols-12 items-center text-[13px]">' +
-      '<div class="col-span-1"><div class="w-10 h-10 bg-holyMintBright rounded-full flex items-center justify-center text-white shadow">' + flechaEntrada() + '</div></div>' +
-      '<div class="col-span-2 pl-2"><span class="text-holyGray font-montserrat font-black text-[13px]">CHECK <span class="font-montserrat font-black text-black">IN</span></span></div>' +
-      '<div class="col-span-3"><p class="text-holyPurple font-montserrat font-black text-[13px]">FECHA DE ENTRADA</p></div>' +
-      '<div class="col-span-3"><p class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkIn) + '</p></div>' +
-      '<div class="col-span-3 flex justify-start pl-4 flex items-center gap-2">' + clockIcon(true) + '<span class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkInHora) + '</span></div></div>' +
-      '<div class="grid grid-cols-12 items-center text-[13px]">' +
-      '<div class="col-span-1"><div class="w-10 h-10 bg-holyMintBright rounded-full flex items-center justify-center text-white shadow">' + flechaSalida() + '</div></div>' +
-      '<div class="col-span-2 pl-2"><span class="text-holyGray font-montserrat font-black text-[13px]">CHECK <span class="font-montserrat font-black text-black">OUT</span></span></div>' +
-      '<div class="col-span-3"><p class="text-holyPurple font-montserrat font-black text-[13px]">FECHA DE SALIDA</p></div>' +
-      '<div class="col-span-3"><p class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkOut) + '</p></div>' +
-      '<div class="col-span-3 flex justify-start pl-4 flex items-center gap-2">' + clockIcon(true) + '<span class="text-holyGray font-montserrat font-black text-[13px]">' + esc(q.hospedaje.checkOutHora) + '</span></div></div>' +
-      '</div></div>' +
+      seccionAereo +
+      seccionPosada +
       '<div class="w-full h-[1.5px] bg-holyLine mt-6 mb-6"></div>' +
       '<div class="grid grid-cols-12 items-start mb-6">' +
       '<div class="col-span-6 text-[14px]">' +

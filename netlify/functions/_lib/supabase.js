@@ -1,5 +1,6 @@
 // netlify/functions/_lib/supabase.js
 const { createClient } = require('@supabase/supabase-js');
+const WebSocket = require('ws');
 
 // Prevenimos el crash instantáneo (502) si faltan variables
 const url = process.env.SUPABASE_URL || 'https://faltan-variables.supabase.co';
@@ -10,6 +11,7 @@ const supabase = createClient(url, key, {
     autoRefreshToken: false,
     persistSession: false,
   },
+  global: { WebSocket },
 });
 
 module.exports = { supabase };

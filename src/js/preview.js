@@ -20,7 +20,7 @@
 
   function avionIcon(espejado) {
     var flip = espejado ? ' style="transform: scaleX(-1);"' : '';
-    return '<img src="assets/img/Avion Holy.png" alt="Avión Holy" class="h-12 w-auto"' + flip + '>';
+    return '<img src="assets/img/Avion Holy.png" alt="Avión Holy"' + flip + '>';
   }
 
   function flechaEntrada() {
@@ -107,33 +107,32 @@
       '<span class="text-holyPurple font-montserrat font-black text-[15px] uppercase">AÉREO:</span>' +
       '<span class="text-holyGray font-montserrat font-black text-[15px] uppercase">' + esc(v.aerolinea) + '</span></div>' +
       '<div class="w-full h-[1.5px] bg-holyLine mb-6"></div>' +
-      '<div class="grid grid-cols-12 gap-2 items-center">' +
-      '<div class="col-span-8 space-y-7">' +
-      '<div class="flex items-center text-[13px]">' +
-      '<div class="w-10 h-10 shrink-0 mr-4 flex items-center justify-center">' + avionIcon(false) + '</div>' +
-      '<div class="w-24 shrink-0"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">IDA</span></div>' +
-      '<div class="w-32 shrink-0"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.ida.origen) + '</p>' +
+      '<div class="vuelo-wrap">' +
+      '<div class="vuelo-info">' +
+      '<div class="vuelo-line text-[13px]">' +
+      '<div class="v-avion">' + avionIcon(false) + '</div>' +
+      '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">IDA</span></div>' +
+      '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.ida.origen) + '</p>' +
       '<p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.ida.destino) + '</p></div>' +
-      '<div class="w-12 shrink-0 flex justify-center">' + clockIcon(true) + '</div>' +
-      '<div class="pl-4"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.ida.fecha) + '</p>' +
+      '<div class="v-clock">' + clockIcon(true) + '</div>' +
+      '<div class="v-horas"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.ida.fecha) + '</p>' +
       '<p class="text-holyGray font-montserrat font-black text-[12px]">SALIDA: ' + esc(v.ida.salida) + '</p>' +
       '<p class="text-holyGray font-montserrat font-black text-[12px]">LLEGADA: ' + esc(v.ida.llegada) + '</p></div>' +
       '</div>' +
-      '<div class="flex items-center text-[13px]">' +
-      '<div class="w-10 h-10 shrink-0 mr-4 flex items-center justify-center">' + avionIcon(true) + '</div>' +
-      '<div class="w-24 shrink-0"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">RETORNO</span></div>' +
-      '<div class="w-32 shrink-0"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.retorno.origen) + '</p>' +
+      '<div class="vuelo-line text-[13px]">' +
+      '<div class="v-avion">' + avionIcon(true) + '</div>' +
+      '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-black text-[14px] tracking-wide">RETORNO</span></div>' +
+      '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.retorno.origen) + '</p>' +
       '<p class="text-holyPurple font-montserrat font-black leading-snug text-[13px]">' + esc(v.retorno.destino) + '</p></div>' +
-      '<div class="w-12 shrink-0 flex justify-center">' + clockIcon(false) + '</div>' +
-      '<div class="pl-4"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.retorno.fecha) + '</p>' +
+      '<div class="v-clock">' + clockIcon(false) + '</div>' +
+      '<div class="v-horas"><p class="text-holyPurple font-montserrat font-black text-[13px]">' + esc(v.retorno.fecha) + '</p>' +
       '<p class="text-holyGray font-montserrat font-black text-[12px]">SALIDA: ' + esc(v.retorno.salida) + '</p>' +
       '<p class="text-holyGray font-montserrat font-black text-[12px]">LLEGADA: ' + esc(v.retorno.llegada) + '</p></div>' +
       '</div>' +
       '</div>' +
-      '<div class="col-span-4 flex justify-end pr-2">' +
-      '<div class="w-48 h-44 relative flex items-center justify-center">' +
-      '<img src="assets/img/Asientos.png" alt="Asientos Ejecutivos" class="w-full h-full object-cover"></div>' +
-      '</div></div></div>' +
+      '<div class="vuelo-img">' +
+      '<img src="assets/img/Asientos.png" alt="Asientos Ejecutivos"></div>' +
+      '</div></div>' +
       '<div>' +
       '<div class="flex items-baseline gap-2 mb-1">' +
       '<span class="text-holyPurple font-montserrat font-black text-[15px] uppercase">POSADA:</span>' +

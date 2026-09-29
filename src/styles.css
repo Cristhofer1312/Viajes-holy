@@ -250,3 +250,82 @@ html.dark ::-webkit-scrollbar-thumb {
 .page-sheet .justify-end { justify-content: flex-end; }
 .page-sheet .min-w-0 { min-width: 0; }
 .page-sheet img { max-width: 100%; }
+
+/* Bloque AÉREO página 1: layout determinista en CSS plano (no depende del
+   JIT de Tailwind ni de la métrica de fuente de cada equipo).
+   La columna de texto es flexible con min-width:0 y la foto de asientos
+   tiene ancho reservado fijo: nunca se solapan. */
+.page-sheet .vuelo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.page-sheet .vuelo-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.page-sheet .vuelo-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.page-sheet .v-avion {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.page-sheet .v-avion img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: 40px;
+  object-fit: contain;
+}
+.page-sheet .v-tipo {
+  flex: 0 0 84px;
+  width: 84px;
+  overflow: hidden;
+}
+.page-sheet .v-ciudad {
+  flex: 0 1 128px;
+  width: 128px;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.page-sheet .v-clock {
+  flex: 0 0 40px;
+  width: 40px;
+  display: flex;
+  justify-content: center;
+}
+.page-sheet .v-horas {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: 8px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.page-sheet .vuelo-img {
+  flex: 0 0 176px;
+  width: 176px;
+  height: 168px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.page-sheet .vuelo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

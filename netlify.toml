@@ -13,7 +13,7 @@
   # para que el bundler no lo deje fuera.
   included_files = ["src/js/roles.js"]
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "22"
   SECRETS_SCAN_ENABLED = "false"
 
 # Redirige /api/* a las Netlify Functions correspondientes

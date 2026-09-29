@@ -403,16 +403,66 @@
       showToast('Tu rol no puede guardar plantillas');
       return;
     }
-    if (isExisting) {
-      state.catalog = state.catalog.map(function (p) { return p.id === t.id ? nueva : p; });
-    } else {
-      state.catalog = state.catalog.concat([nueva]);
+
+    var btnSave = document.querySelector('[data-act="save"]');
+    if (btnSave) {
+      btnSave.textContent = 'Guardando...';
+      btnSave.disabled = true;
     }
-    Store.saveCatalog(state.catalog).then(function () {
+
+    // Convert data:image back to Blob to upload via api/imagen-upload
+    var token = Auth.usuario ? window.__supabaseSession.access_token : null;
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    var imagePromises = nueva.imagenesBase64.map(function(img, i) {
+      if (img.startsWith('http')) return Promise.resolve(img);
+      if (!img.startsWith('data:image')) return Promise.resolve(img);
+      
+      var mime = img.split(',')[0].split(':')[1].split(';')[0];
+      var b64Data = img.split(',')[1];
+      var bin = atob(b64Data);
+      var arr = new Uint8Array(bin.length);
+      for(var j=0; j<bin.length; j++) arr[j] = bin.charCodeAt(j);
+      var blob = new Blob([arr], {type: mime});
+
+      return fetch('/api/imagen-upload', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ posadaId: nueva.id, contentType: mime })
+      }).then(r => r.json()).then(u => {
+        return fetch(u.signedUrl, {
+          method: 'PUT',
+          body: blob,
+          headers: { 'Content-Type': mime }
+        }).then(() => u.publicUrl);
+      });
+    });
+
+    Promise.all(imagePromises).then(function(urls) {
+      nueva.imagenesBase64 = urls;
+      if (isExisting) {
+        state.catalog = state.catalog.map(function (p) { return p.id === t.id ? nueva : p; });
+      } else {
+        state.catalog = state.catalog.concat([nueva]);
+      }
+      
+      if (Store.savePlantilla) {
+        return Store.savePlantilla(nueva);
+      } else {
+        return Store.saveCatalog(state.catalog);
+      }
+    }).then(function () {
       resetEditor();
       renderTemplateList();
       populatePosadas();
       showToast('Plantilla guardada');
+    }).catch(function(err) {
+      showToast('Error al guardar: ' + err.message);
+      if (btnSave) {
+        btnSave.textContent = 'Guardar plantilla';
+        btnSave.disabled = false;
+      }
     });
   }
 

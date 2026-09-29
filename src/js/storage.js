@@ -88,6 +88,17 @@
   }
 
   /**
+   * Guarda una única plantilla (optimizado para evitar guardar todo el catálogo).
+   */
+  function savePlantilla(plantilla) {
+    return fetchJSON('/api/plantillas-save', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(plantilla),
+    });
+  }
+
+  /**
    * Descarga el catálogo como archivo JSON local (respaldo manual).
    * Se mantiene igual que antes.
    */
@@ -140,6 +151,7 @@
   root.Store = {
     loadCatalog:        loadCatalog,
     saveCatalog:        saveCatalog,
+    savePlantilla:      savePlantilla,
     descargar:          descargar,
     leerArchivoJSON:    leerArchivoJSON,
     tieneElectron:      tieneElectron,

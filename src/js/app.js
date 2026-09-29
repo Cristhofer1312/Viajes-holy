@@ -124,12 +124,30 @@
     return vistasPermitidas().indexOf(v) !== -1;
   }
 
+  // ------------------------------------------------ MENÚ MÓVIL (drawer)
+  function abrirMenu() {
+    var sb = $('sidebar');
+    if (!sb) return;
+    sb.classList.remove('max-lg:-translate-x-full');
+    var ov = $('menu-overlay');
+    if (ov) ov.classList.remove('hidden');
+  }
+
+  function cerrarMenu() {
+    var sb = $('sidebar');
+    if (!sb) return;
+    sb.classList.add('max-lg:-translate-x-full');
+    var ov = $('menu-overlay');
+    if (ov) ov.classList.add('hidden');
+  }
+
   function setActiveNav(nav) {
     // Nunca navegar a una vista no permitida (p. ej. restaurada de localStorage)
     if (!vistaPermitida(nav)) {
       var permitidas = vistasPermitidas();
       nav = permitidas.indexOf('cotizacion') !== -1 ? 'cotizacion' : permitidas[0];
     }
+    cerrarMenu(); // en móvil el drawer se cierra al elegir vista
 
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       var on = b.dataset.nav === nav;
@@ -299,8 +317,8 @@
       '<button data-act="cancel" class="text-[11px] font-bold text-slate-800 hover:text-black">Cancelar</button>' +
       '</div>' +
       '<div class="space-y-5">' +
-      '<div class="grid grid-cols-3 gap-2">' +
-      '<div class="col-span-3"><label class="block text-[10px] font-extrabold text-slate-800 dark:text-white/50 uppercase mb-1">Tipo de Plantilla</label>' +
+      '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">' +
+      '<div class="col-span-1 sm:col-span-3"><label class="block text-[10px] font-extrabold text-slate-800 dark:text-white/50 uppercase mb-1">Tipo de Plantilla</label>' +
       '<select id="ed-tipo" class="ed-live w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-bold uppercase"><option value="COMPLETO"' + (t && t.tipoTemplate === 'COMPLETO' ? ' selected' : '') + '>PAQUETE COMPLETO</option><option value="HOSPEDAJE"' + (t && t.tipoTemplate === 'HOSPEDAJE' ? ' selected' : '') + '>SOLO HOSPEDAJE</option></select></div>' +
       '<div><label class="block text-[10px] font-extrabold text-slate-800 dark:text-white/50 uppercase mb-1">Nombre de la posada</label>' +
       '<input id="ed-nombre" type="text" value="' + esc(t ? t.nombrePosada : '') + '" placeholder="POSADA CORALES" class="ed-live w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-bold uppercase"></div>' +
@@ -318,7 +336,7 @@
       '<div><label class="block text-[10px] font-extrabold text-slate-800 dark:text-white/50 uppercase mb-1">Número de fotos</label>' +
       '<div class="flex gap-1.5">' + layoutBtns + '</div></div>' +
       '<div><label class="block text-[10px] font-extrabold text-slate-800 dark:text-white/50 uppercase mb-1">Imágenes de galería (' + state.editImages.length + '/' + layout + ')</label>' +
-      '<div class="grid grid-cols-4 gap-2 mb-2">' + slots + '</div>' +
+      '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">' + slots + '</div>' +
       '<button data-act="addimg" class="w-full rounded-lg border-2 border-dashed border-holyPurple/30 text-holyPurple text-xs font-extrabold py-2 hover:bg-holyPurple/5 dark:hover:bg-holyPurple/20">Subir o reemplazar imágenes</button>' +
       '<input id="img-input" type="file" accept="image/*" multiple class="hidden"></div>' +
       '<div><label class="block text-[10px] font-extrabold text-slate-800 dark:text-white/50 uppercase mb-1">Inclusiones (una por línea)</label>' +
@@ -721,7 +739,7 @@
         '  </div>' +
         '  <p class="vd-paste-msg hidden mt-1 text-[10px] font-bold"></p>' +
         '</div>' +
-        '<div class="grid grid-cols-3 gap-2">' +
+        '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">' +
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Tipo</label>' +
         '  <select class="vd-tipo w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-xs input-track">' +
         '    <option value="IDA"' + (v.tipo === 'IDA' ? ' selected' : '') + '>IDA</option>' +
@@ -734,7 +752,7 @@
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Destino</label>' +
         '  <input type="text" class="vd-destino w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-xs input-track uppercase" value="' + esc(v.destino) + '"></div>' +
         '</div>' +
-        '<div class="grid grid-cols-4 gap-2">' +
+        '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">' +
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Fecha</label>' +
         '  <input type="date" class="vd-fecha w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-xs input-track" value="' + esc(v.fecha) + '"></div>' +
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Salida</label>' +
@@ -1295,6 +1313,21 @@
       var data = Exporter.buildExport(state.catalog);
       Store.descargar(data, 'catalogo_plantillas.json');
       showToast('Catálogo exportado (' + data.totalPlantillas + ' plantillas)');
+    });
+
+    var btnMenu = $('btn-menu');
+    if (btnMenu) btnMenu.addEventListener('click', abrirMenu);
+    var menuOverlay = $('menu-overlay');
+    if (menuOverlay) menuOverlay.addEventListener('click', cerrarMenu);
+    // Al volver a desktop el drawer debe quedar neutro (translate solo en <1024px)
+    window.addEventListener('resize', function () {
+      if (window.innerWidth >= 1024) {
+        var ov = $('menu-overlay');
+        if (ov) ov.classList.add('hidden');
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') cerrarMenu();
     });
 
     $('btn-import').addEventListener('click', function () { $('file-import').click(); });

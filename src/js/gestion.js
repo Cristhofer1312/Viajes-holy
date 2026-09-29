@@ -82,10 +82,10 @@
       tbody.innerHTML = plantillas.map(function (p) {
         var puedeBorrar = Auth.puede('template:delete');
         return '<tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition border-b border-gray-50 dark:border-white/5 last:border-0">' +
-          '<td class="p-4 font-bold text-gray-800 dark:text-gray-200">' + escapar(p.nombrePosada) + '</td>' +
-          '<td class="p-4 text-gray-500 dark:text-gray-400 text-sm">' + escapar(p.destino) + '</td>' +
-          '<td class="p-4"><span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md">ACTIVA</span></td>' +
-          '<td class="p-4 text-right">' +
+          '<td class="p-2 sm:p-4 font-bold text-gray-800 dark:text-gray-200">' + escapar(p.nombrePosada) + '</td>' +
+          '<td class="p-2 sm:p-4 text-gray-500 dark:text-gray-400 text-sm">' + escapar(p.destino) + '</td>' +
+          '<td class="p-2 sm:p-4"><span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md">ACTIVA</span></td>' +
+          '<td class="p-2 sm:p-4 text-right">' +
             (puedeBorrar
               ? '<button data-posada-eliminar="' + escapar(p.id) + '" class="text-xs font-bold text-red-500 hover:underline">Eliminar</button>'
               : '') +
@@ -160,14 +160,14 @@
         accion += '<button data-usuario-accion="delete" data-id="' + escapar(u.id) + '" class="text-xs font-bold text-red-500 hover:underline">Eliminar</button>';
       }
       return '<tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition border-b border-gray-50 dark:border-white/5 last:border-0">' +
-        '<td class="p-4"><div class="font-bold text-gray-800 dark:text-gray-200">' + escapar(u.nombre) + '</div>' +
+        '<td class="p-2 sm:p-4"><div class="font-bold text-gray-800 dark:text-gray-200">' + escapar(u.nombre) + '</div>' +
         '<div class="text-xs text-gray-500">' + escapar(u.email || '') + '</div></td>' +
-        '<td class="p-4"><span class="px-2 py-1 bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 text-xs font-bold uppercase rounded-md border border-gray-200 dark:border-white/10">' + escapar(u.rol) + '</span></td>' +
-        '<td class="p-4">' + (u.activo
+        '<td class="p-2 sm:p-4"><span class="px-2 py-1 bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 text-xs font-bold uppercase rounded-md border border-gray-200 dark:border-white/10">' + escapar(u.rol) + '</span></td>' +
+        '<td class="p-2 sm:p-4">' + (u.activo
           ? '<span class="text-green-600 font-bold text-xs flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Activo</span>'
           : '<span class="text-gray-400 font-bold text-xs flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-300"></span> Inactivo</span>') +
         '</td>' +
-        '<td class="p-4 text-right">' + (accion || '<span class="text-xs text-gray-400">—</span>') + '</td>' +
+        '<td class="p-2 sm:p-4 text-right">' + (accion || '<span class="text-xs text-gray-400">—</span>') + '</td>' +
       '</tr>';
     }).join('');
   }
@@ -529,6 +529,9 @@
     var name = $('user-name');
     if (badge) badge.textContent = usuario.rol;
     if (name) name.textContent = usuario.nombre || usuario.rol;
+    // El mismo rol se refleja en el topbar móvil
+    var badgeMobile = $('user-role-badge-mobile');
+    if (badgeMobile) badgeMobile.textContent = usuario.rol;
   });
 
 })();

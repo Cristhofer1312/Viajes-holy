@@ -72,11 +72,33 @@
     <!-- APP — oculta hasta que auth.js confirma la sesión -->
     <div id="app-shell" class="hidden flex-1 min-h-0 flex flex-col">
 
+    <!-- TOPBAR MÓVIL — sustituye a la barra lateral en <1024px -->
+    <div class="no-print lg:hidden flex items-center gap-3 px-3 py-2 bg-holyPurple dark:bg-[#141414] text-white border-b border-white/10">
+        <button id="btn-menu" type="button" aria-label="Abrir menú"
+            class="shrink-0 rounded-lg p-2 hover:bg-white/10 active:bg-white/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                </path>
+            </svg>
+        </button>
+        <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+            <img src="assets/img/Logo Holy.png" alt="Holy" class="w-full h-full object-cover">
+        </div>
+        <p class="font-poppins font-black leading-tight text-[13px] truncate">viajes <span
+                class="text-holyMint">holy</span></p>
+        <div class="flex-1"></div>
+        <span id="user-role-badge-mobile"
+            class="text-[10px] font-black text-holyMint uppercase tracking-wider shrink-0">—</span>
+    </div>
+
+    <!-- Overlay del menú en móvil -->
+    <div id="menu-overlay" class="no-print hidden fixed inset-0 z-40 bg-black/60 lg:hidden"></div>
+
     <div class="flex flex-1 min-h-0">
 
-        <!-- BARRA LATERAL -->
-        <aside
-            class="no-print w-60 shrink-0 bg-holyPurple dark:bg-[#141414] dark:border-r dark:border-white/5 text-white flex flex-col shadow-xl">
+        <!-- BARRA LATERAL / DRAWER -->
+        <aside id="sidebar"
+            class="no-print w-60 shrink-0 bg-holyPurple dark:bg-[#141414] dark:border-r dark:border-white/5 text-white flex flex-col shadow-xl max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:-translate-x-full max-lg:transition-transform max-lg:duration-200 lg:static">
             <div class="p-5 flex items-center gap-3 border-b border-white/10">
                 <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0">
                     <img src="assets/img/Logo Holy.png" alt="Holy" class="w-full h-full object-cover">
@@ -187,9 +209,9 @@
         <main class="flex-1 flex flex-col min-w-0">
 
             <!-- VISTA: PLANTILLAS -->
-            <section id="view-plantillas" class="view hidden flex-1 min-h-0 grid grid-cols-12">
+            <section id="view-plantillas" class="view hidden flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 max-lg:overflow-y-auto">
                 <div
-                    class="form-panel col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414]">
+                    class="form-panel col-span-1 lg:col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414]">
                     <div
                         class="px-4 py-3 border-b border-gray-100 dark:border-[#333333] flex items-center justify-between gap-2">
                         <div>
@@ -213,9 +235,9 @@
                         class="hidden border-t border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] overflow-y-auto">
                     </div>
                 </div>
-                <div class="col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
+                <div class="col-span-1 lg:col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
                     <div
-                        class="no-print px-4 py-2 flex items-center gap-2 bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
+                        class="no-print px-4 py-2 flex items-center gap-2 flex-wrap bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
                         <span
                             class="text-xs font-bold text-holyPurple dark:text-primaryLight uppercase tracking-wide">Vista
                             previa en vivo</span>
@@ -235,9 +257,9 @@
             </section>
 
             <!-- VISTA: COTIZACIÓN -->
-            <section id="view-cotizacion" class="view hidden flex-1 min-h-0 grid grid-cols-12">
+            <section id="view-cotizacion" class="view hidden flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 max-lg:overflow-y-auto">
                 <div
-                    class="form-panel col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414] overflow-y-auto">
+                    class="form-panel col-span-1 lg:col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414] overflow-y-auto">
                     <div class="px-4 py-3 border-b border-gray-100 dark:border-[#333333]">
                         <h2
                             class="text-holyPurple dark:text-primaryLight font-extrabold text-[15px] uppercase leading-tight">
@@ -307,7 +329,7 @@
                         </div>
                         <!-- Estado moved up -->
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                                 <label
                                     class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Fecha
@@ -341,7 +363,7 @@
                                     </div>
                                     <p id="q-paste-ida-msg" class="hidden mt-1 text-[10px] font-bold"></p>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
                                         <label
                                             class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Origen</label>
@@ -377,7 +399,7 @@
                                                 class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-1 py-1.5 text-xs font-semibold input-track">
                                         </div>
                                     </div>
-                                    <div id="wrap-duracion-ida" class="mt-1 hidden text-right col-span-2">
+                                    <div id="wrap-duracion-ida" class="mt-1 hidden text-right col-span-1 sm:col-span-2">
                                         <span
                                             class="text-[9px] font-extrabold text-holyPurple dark:text-primaryLight tracking-wider uppercase">DURACIÓN:
                                         </span>
@@ -404,7 +426,7 @@
                                     </div>
                                     <p id="q-paste-ret-msg" class="hidden mt-1 text-[10px] font-bold"></p>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
                                         <label
                                             class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Origen
@@ -440,7 +462,7 @@
                                                 class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-1 py-1.5 text-xs font-semibold input-track">
                                         </div>
                                     </div>
-                                    <div id="wrap-duracion-ret" class="mt-1 hidden text-right col-span-2">
+                                    <div id="wrap-duracion-ret" class="mt-1 hidden text-right col-span-1 sm:col-span-2">
                                         <span
                                             class="text-[9px] font-extrabold text-holyPurple dark:text-primaryLight tracking-wider uppercase">DURACIÓN:
                                         </span>
@@ -493,7 +515,7 @@
                             <p
                                 class="text-[11px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-2">
                                 Fechas de Estancia</p>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
                                     <label
                                         class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Check
@@ -511,7 +533,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div>
                                 <label
                                     class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Adultos</label>
@@ -534,7 +556,7 @@
 
 
 
-                        <div class="grid grid-cols-3 gap-2 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                             <div>
                                 <label
                                     class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Tarifa
@@ -588,9 +610,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
+                <div class="col-span-1 lg:col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
                     <div
-                        class="no-print px-4 py-2 flex items-center gap-2 bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
+                        class="no-print px-4 py-2 flex items-center gap-2 flex-wrap bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
                         <span
                             class="text-xs font-bold text-holyPurple dark:text-primaryLight uppercase tracking-wide">Vista
                             previa del PDF</span>
@@ -671,9 +693,9 @@
             </section>
 
             <!-- VISTA: GESTIÓN DE POSADAS — requiere template:create -->
-            <section id="view-gestion-posadas" class="view hidden flex-1 min-h-0 p-6 bg-gray-100 dark:bg-transparent overflow-y-auto">
+            <section id="view-gestion-posadas" class="view hidden flex-1 min-h-0 p-3 sm:p-6 bg-gray-100 dark:bg-transparent overflow-y-auto">
                 <div class="max-w-6xl mx-auto">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                         <div>
                             <h2 class="text-holyPurple dark:text-primaryLight font-extrabold text-lg uppercase">Gestión de
                                 Posadas</h2>
@@ -681,36 +703,38 @@
                                 del catálogo. Visibles para todos los cotizadores.</p>
                         </div>
                         <button id="btn-nueva-posada"
-                            class="bg-holyMint text-white font-bold py-2.5 px-5 rounded-xl hover:bg-holyMintBright transition shadow-lg shadow-holyMint/30">
+                            class="shrink-0 self-start sm:self-auto bg-holyMint text-white font-bold py-2.5 px-5 rounded-xl hover:bg-holyMintBright transition shadow-lg shadow-holyMint/30">
                             + Nueva Posada
                         </button>
                     </div>
                     <div class="rounded-2xl bg-white dark:bg-[#141414] shadow-md overflow-hidden dark:border dark:border-white/5">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-100 dark:border-white/5 text-left">
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Posada</th>
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Destino</th>
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Estado</th>
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-posadas"></tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[560px]">
+                                <thead>
+                                    <tr class="border-b border-gray-100 dark:border-white/5 text-left">
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Posada</th>
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Destino</th>
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Estado</th>
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-posadas"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- VISTA: USUARIOS — requiere user:read -->
-            <section id="view-usuarios" class="view hidden flex-1 min-h-0 p-6 bg-gray-100 dark:bg-transparent overflow-y-auto">
+            <section id="view-usuarios" class="view hidden flex-1 min-h-0 p-3 sm:p-6 bg-gray-100 dark:bg-transparent overflow-y-auto">
                 <div class="max-w-6xl mx-auto">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                         <div>
                             <h2 class="text-holyPurple dark:text-primaryLight font-extrabold text-lg uppercase">Usuarios</h2>
                             <p class="text-xs text-slate-900 dark:text-gray-400 font-semibold">Cuentas con acceso al
                                 cotizador. El acceso es el email: el usuario entra inmediatamente tras ser creado.</p>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 shrink-0 self-start sm:self-auto">
                             <button id="btn-mi-cuenta"
                                 class="bg-white border-2 border-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl hover:border-holyPurple transition">
                                 Mi cuenta
@@ -723,7 +747,7 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-3 mb-4">
                         <input type="text" id="usuarios-buscar" placeholder="Buscar por nombre o email..."
-                            class="border-2 border-gray-200 rounded-xl p-2.5 text-sm font-medium focus:border-holyPurple outline-none flex-1 min-w-[200px]">
+                            class="border-2 border-gray-200 rounded-xl p-2.5 text-sm font-medium focus:border-holyPurple outline-none flex-1 min-w-[140px]">
                         <select id="usuarios-filtro-rol"
                             class="border-2 border-gray-200 rounded-xl p-2.5 text-sm font-bold text-gray-700 focus:border-holyPurple outline-none">
                             <option value="todos">Todos los roles</option>
@@ -734,17 +758,19 @@
                         <span id="usuarios-total" class="text-xs font-bold text-gray-500"></span>
                     </div>
                     <div class="rounded-2xl bg-white dark:bg-[#141414] shadow-md overflow-hidden dark:border dark:border-white/5">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-100 dark:border-white/5 text-left">
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Nombre / Email</th>
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Rol</th>
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Estado</th>
-                                    <th class="p-4 text-xs font-black text-gray-500 uppercase text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-usuarios"></tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[560px]">
+                                <thead>
+                                    <tr class="border-b border-gray-100 dark:border-white/5 text-left">
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Nombre / Email</th>
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Rol</th>
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Estado</th>
+                                        <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-usuarios"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -754,13 +780,13 @@
     <!-- MODAL NUEVA POSADA — requiere template:create -->
     <div id="modal-posada" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 class="text-xl font-black text-gray-800">Nueva Posada</h3>
                 <button id="cerrar-modal-posada" class="text-gray-400 hover:text-gray-700 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-6 overflow-y-auto flex-1">
+            <div class="p-4 sm:p-6 overflow-y-auto flex-1">
                 <form id="form-posada" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -786,11 +812,11 @@
                             <p class="text-xs text-gray-500 mt-1">JPG, PNG, WebP (Máx 5MB)</p>
                             <input type="file" id="file-input" multiple accept="image/*" class="hidden">
                         </div>
-                        <div id="preview-fotos" class="grid grid-cols-4 gap-4 mt-4"></div>
+                            <div id="preview-fotos" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4"></div>
                     </div>
                 </form>
             </div>
-            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            <div class="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 flex-wrap">
                 <button type="button" id="cancelar-posada" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-200 transition">Cancelar</button>
                 <button type="submit" form="form-posada" id="guardar-posada-btn" class="bg-holyPurple text-white font-bold py-2.5 px-6 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Guardar Posada</button>
             </div>
@@ -800,13 +826,13 @@
     <!-- MODAL NUEVO USUARIO — requiere user:create -->
     <div id="modal-usuario" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 class="text-xl font-black text-gray-800">Crear Usuario</h3>
                 <button id="cerrar-modal-usuario" class="text-gray-400 hover:text-gray-700 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <form id="form-usuario" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre Completo</label>
@@ -836,7 +862,7 @@
                     <div id="usuario-error" class="text-red-500 text-sm font-semibold text-center hidden"></div>
                 </form>
             </div>
-            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            <div class="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 flex-wrap">
                 <button type="submit" form="form-usuario" id="guardar-usuario-btn" class="w-full bg-holyPurple text-white font-bold py-3 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Crear Usuario</button>
             </div>
         </div>
@@ -845,13 +871,13 @@
     <!-- MODAL EDITAR USUARIO — requiere user:update -->
     <div id="modal-usuario-editar" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 class="text-xl font-black text-gray-800">Editar Usuario</h3>
                 <button id="cerrar-modal-usuario-editar" class="text-gray-400 hover:text-gray-700 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <form id="form-usuario-editar" class="space-y-4">
                     <input type="hidden" id="usuario-edit-id">
                     <div>
@@ -868,7 +894,7 @@
                     <div id="usuario-edit-error" class="text-red-500 text-sm font-semibold text-center hidden"></div>
                 </form>
             </div>
-            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            <div class="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 flex-wrap">
                 <button type="submit" form="form-usuario-editar" id="guardar-usuario-edit-btn" class="w-full bg-holyPurple text-white font-bold py-3 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Guardar Cambios</button>
             </div>
         </div>
@@ -877,13 +903,13 @@
     <!-- MODAL MI CUENTA — cambio de contraseña propia -->
     <div id="modal-mi-cuenta" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div class="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 class="text-xl font-black text-gray-800">Mi cuenta</h3>
                 <button id="cerrar-modal-mi-cuenta" class="text-gray-400 hover:text-gray-700 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <form id="form-mi-cuenta" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nueva contraseña (Mín. 8)</label>
@@ -897,7 +923,7 @@
                     <div id="mi-cuenta-ok" class="text-green-600 text-sm font-semibold text-center hidden"></div>
                 </form>
             </div>
-            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            <div class="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 flex-wrap">
                 <button type="submit" form="form-mi-cuenta" id="guardar-mi-cuenta-btn" class="w-full bg-holyPurple text-white font-bold py-3 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Actualizar Contraseña</button>
             </div>
         </div>

@@ -129,7 +129,7 @@
       '</div>' +
       '<div class="col-span-4 flex justify-end pr-2">' +
       '<div class="w-48 h-44 relative flex items-center justify-center">' +
-      '<img src="assets/img/Asientos.png" alt="Asientos Ejecutivos" class="w-full h-full object-cover rounded-xl shadow-md border border-gray-100"></div>' +
+      '<img src="assets/img/Asientos.png" alt="Asientos Ejecutivos" class="w-full h-full object-cover"></div>' +
       '</div></div></div>' +
       '<div>' +
       '<div class="flex items-baseline gap-2 mb-1">' +

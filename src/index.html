@@ -40,25 +40,25 @@
     <!-- OVERLAY DE LOGIN — única puerta de entrada, controlada por auth.js -->
     <div id="login-overlay"
         class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4">
+        <div class="bg-white dark:bg-[#1e1e1e] p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-holyPurple rounded-2xl mx-auto mb-4 flex items-center justify-center">
                     <img src="assets/img/Logo Holy.png" class="w-12 h-12 object-contain" alt="Logo">
                 </div>
-                <h2 class="text-2xl font-black text-gray-800">Viajes Holy</h2>
-                <p class="text-sm text-gray-500">Ingresa tus credenciales</p>
+                <h2 class="text-2xl font-black text-gray-800 dark:text-white">Viajes Holy</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Ingresa tus credenciales</p>
             </div>
 
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Email</label>
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Email</label>
                     <input type="email" id="login-email" required
-                        class="w-full border-2 border-gray-200 rounded-xl p-3 text-gray-900 focus:border-holyPurple outline-none transition font-medium">
+                        class="w-full border-2 border-gray-200 dark:border-[#333333] bg-transparent dark:bg-[#2a2a2a] rounded-xl p-3 text-gray-900 dark:text-white focus:border-holyPurple outline-none transition font-medium">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contraseña</label>
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Contraseña</label>
                     <input type="password" id="login-pass" required
-                        class="w-full border-2 border-gray-200 rounded-xl p-3 text-gray-900 focus:border-holyPurple outline-none transition font-medium">
+                        class="w-full border-2 border-gray-200 dark:border-[#333333] bg-transparent dark:bg-[#2a2a2a] rounded-xl p-3 text-gray-900 dark:text-white focus:border-holyPurple outline-none transition font-medium">
                 </div>
                 <button type="submit" id="login-btn"
                     class="w-full bg-holyPurple text-white font-bold py-3.5 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">

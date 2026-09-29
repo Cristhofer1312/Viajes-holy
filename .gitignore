@@ -1,0 +1,14 @@
+# Variables de entorno — NUNCA subir al repositorio
+.env
+.env.local
+.env.production
+
+# Dependencias
+node_modules/
+
+# Netlify
+.netlify/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

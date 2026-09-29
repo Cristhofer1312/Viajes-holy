@@ -1,0 +1,12 @@
+{
+  "name": "holy-cotizador-web",
+  "version": "1.0.0",
+  "description": "Sistema de cotizaciones de viaje - Viajes Holy",
+  "scripts": {
+    "test": "node --test test/roles.test.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5"
+  }
+}

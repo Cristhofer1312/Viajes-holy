@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viajes Holy - Sistema de Cotizaciones</title>
+    <script src="assets/js/tailwind.js?v=4"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        holyPurple: '#7f2984',
+                        holyPurpleDark: '#410d44',
+                        holyMint: '#38D39F',
+                        holyMintBright: '#76D8B1',
+                        holyGray: '#333333',
+                        holyGrayLight: '#6B7280',
+                        holyLine: '#7f2984',
+                        primary: '#7f2984',
+                        primaryDark: '#410d44',
+                        primaryLight: '#7f2984'
+                    },
+                    fontFamily: {
+                        outfit: ['Outfit', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="assets/css/fonts.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=4">
+</head>
+
+<body class="h-screen overflow-hidden flex flex-col dark:bg-[#0f0f0f] dark:text-white">
+
+    <!-- OVERLAY DE LOGIN — única puerta de entrada, controlada por auth.js -->
+    <div id="login-overlay"
+        class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-holyPurple rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                    <img src="assets/img/Logo Holy.png" class="w-12 h-12 object-contain" alt="Logo">
+                </div>
+                <h2 class="text-2xl font-black text-gray-800">Viajes Holy</h2>
+                <p class="text-sm text-gray-500">Ingresa tus credenciales</p>
+            </div>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Email</label>
+                    <input type="email" id="login-email" required
+                        class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contraseña</label>
+                    <input type="password" id="login-pass" required
+                        class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                </div>
+                <button type="submit" id="login-btn"
+                    class="w-full bg-holyPurple text-white font-bold py-3.5 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">
+                    Entrar al Sistema
+                </button>
+                <div id="login-error" class="text-red-500 text-sm font-semibold text-center hidden"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP — oculta hasta que auth.js confirma la sesión -->
+    <div id="app-shell" class="hidden flex-1 min-h-0 flex flex-col">
+
+    <div class="flex flex-1 min-h-0">
+
+        <!-- BARRA LATERAL -->
+        <aside
+            class="no-print w-60 shrink-0 bg-holyPurple dark:bg-[#141414] dark:border-r dark:border-white/5 text-white flex flex-col shadow-xl">
+            <div class="p-5 flex items-center gap-3 border-b border-white/10">
+                <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+                    <img src="assets/img/Logo Holy.png" alt="Holy" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <p class="font-poppins font-black leading-tight text-[15px]">viajes <span
+                            class="text-holyMint">holy</span></p>
+                    <p class="text-[10px] text-white/60 font-semibold tracking-widest uppercase">Cotizador Offline</p>
+                </div>
+            </div>
+
+            <nav class="flex-1 py-4 px-3 space-y-1">
+                <button data-nav="plantillas"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-white/80 hover:bg-white/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                        </path>
+                    </svg>
+                    Plantillas
+                </button>
+                <button data-nav="cotizacion"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-white/80 hover:bg-white/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                        </path>
+                    </svg>
+                    Cotización
+                </button>
+                <!-- Catálogo oculto por decisión de producto: la vista view-catalogo y
+                     Exporter siguen intactos en el código para reactivarlos luego -->
+                <button data-nav="catalogo" id="nav-catalogo" style="display: none;"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-white/80 hover:bg-white/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Catálogo
+                </button>
+
+                <!-- Gestión de Posadas — requiere template:create (encargado/admin) -->
+                <button data-nav="gestion-posadas" id="nav-gestion-posadas" style="display: none;"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-white/80 hover:bg-white/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                        </path>
+                    </svg>
+                    Gestión de Posadas
+                </button>
+
+                <!-- Usuarios — requiere user:read (encargado/admin) -->
+                <button data-nav="usuarios" id="nav-usuarios" style="display: none;"
+                    class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-white/80 hover:bg-white/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
+                    Usuarios
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-white/10 flex flex-col gap-3">
+                <div class="px-3 py-2 rounded-xl bg-white/5 flex items-center justify-between">
+                    <span class="text-white/50 text-xs font-semibold truncate" id="user-name">—</span>
+                    <span id="user-role-badge"
+                        class="text-[10px] font-black text-holyMint uppercase tracking-wider ml-2 shrink-0">—</span>
+                </div>
+                <button id="logout-btn"
+                    class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-bold text-red-300 hover:bg-white/10 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                    Cerrar Sesión
+                </button>
+                <button id="btn-dark-mode"
+                    class="flex items-center justify-between w-full px-3 py-2 rounded-xl bg-white/10 text-white/80 hover:bg-white/20 transition-colors text-xs font-bold">
+                    <span class="flex items-center gap-2">
+                        <svg id="icon-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
+                        </svg>
+                        <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                            </path>
+                        </svg>
+                        <span id="dark-mode-text">Modo Oscuro</span>
+                    </span>
+                    <div class="relative inline-flex h-4 w-7 items-center rounded-full bg-black/30">
+                        <span id="dark-mode-knob"
+                            class="inline-block h-3 w-3 translate-x-1 transform rounded-full bg-white transition-transform"></span>
+                    </div>
+                </button>
+                <div class="text-[10px] text-white/50 font-semibold flex items-center justify-between">
+                    <span>Viajes Holy · v1.0.0</span>
+                    <span id="storage-badge" class="px-2 py-0.5 rounded-full bg-white/10">offline</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO -->
+        <main class="flex-1 flex flex-col min-w-0">
+
+            <!-- VISTA: PLANTILLAS -->
+            <section id="view-plantillas" class="view hidden flex-1 min-h-0 grid grid-cols-12">
+                <div
+                    class="form-panel col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414]">
+                    <div
+                        class="px-4 py-3 border-b border-gray-100 dark:border-[#333333] flex items-center justify-between gap-2">
+                        <div>
+                            <h2
+                                class="text-holyPurple dark:text-primaryLight font-extrabold text-[15px] uppercase leading-tight">
+                                Gestor de Plantillas</h2>
+                            <p id="tpl-count" class="text-[11px] text-slate-800 dark:text-gray-400 font-semibold">0
+                                posadas</p>
+                        </div>
+                        <button id="btn-nueva"
+                            class="px-3 py-2 rounded-xl bg-holyPurple dark:bg-gradient-to-br dark:from-primary dark:to-primaryDark text-white text-xs font-bold hover:bg-holyPurpleDark transition-all shadow-sm dark:shadow-[0_5px_15px_rgba(168,42,188,0.3)] dark:hover:shadow-[0_8px_20px_rgba(168,42,188,0.5)] dark:hover:-translate-y-0.5">+
+                            Nueva</button>
+                    </div>
+                    <div id="tpl-search-wrap"
+                        class="px-4 py-2 border-b border-gray-100 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a]">
+                        <input id="tpl-search" type="text" placeholder="Buscar plantilla..."
+                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-3 py-1.5 text-xs font-semibold focus:border-holyPurple focus:outline-none">
+                    </div>
+                    <div id="tpl-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+                    <div id="tpl-editor"
+                        class="hidden border-t border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] overflow-y-auto">
+                    </div>
+                </div>
+                <div class="col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
+                    <div
+                        class="no-print px-4 py-2 flex items-center gap-2 bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
+                        <span
+                            class="text-xs font-bold text-holyPurple dark:text-primaryLight uppercase tracking-wide">Vista
+                            previa en vivo</span>
+                        <span id="pv-plantillas-nombre" class="text-xs text-slate-800 font-semibold"></span>
+                        <div class="flex-1"></div>
+                        <div class="flex rounded-full bg-gray-100 dark:bg-white/10 p-0.5 text-[11px] font-bold">
+                            <button class="pg-btn px-3 py-1 rounded-full bg-holyPurple text-white"
+                                data-stage="stage-plantillas" data-m="all">Ambas</button>
+                            <button class="pg-btn px-3 py-1 rounded-full text-black" data-stage="stage-plantillas"
+                                data-m="page1">Página 1</button>
+                            <button class="pg-btn px-3 py-1 rounded-full text-black" data-stage="stage-plantillas"
+                                data-m="page2">Página 2</button>
+                        </div>
+                    </div>
+                    <div id="stage-plantillas" class="preview-stage flex-1 overflow-x-hidden overflow-y-auto p-4"></div>
+                </div>
+            </section>
+
+            <!-- VISTA: COTIZACIÓN -->
+            <section id="view-cotizacion" class="view hidden flex-1 min-h-0 grid grid-cols-12">
+                <div
+                    class="form-panel col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414] overflow-y-auto">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-[#333333]">
+                        <h2
+                            class="text-holyPurple dark:text-primaryLight font-extrabold text-[15px] uppercase leading-tight">
+                            Cotización Rápida</h2>
+                        <p class="text-[11px] text-slate-800 dark:text-gray-400 font-semibold">Los datos variables de la
+                            propuesta</p>
+                    </div>
+                    <div class="p-4 space-y-4">
+
+                        <div>
+                            <label
+                                class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Tipo
+                                de paquete</label>
+                            <select id="q-tipo"
+                                class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-semibold input-track">
+                                <option value="">Tipo de paquete</option>
+                                <option>PAQUETE COMPLETO</option>
+                                <option>SOLO HOSPEDAJE</option>
+                                <option>SOLO VUELO</option>
+                            </select>
+                            <button id="btn-clear-data"
+                                class="mt-2 w-full flex items-center justify-center gap-2 rounded-xl border-2 border-red-500 text-red-500 px-3 py-2 text-[11px] font-extrabold hover:bg-red-500 hover:text-white transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                    </path>
+                                </svg>
+                                Limpiar Datos
+                            </button>
+                        </div>
+
+                        <div id="q-posada-section" class="space-y-4">
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Posada</label>
+                                <div id="q-posada-wrap" class="relative">
+                                    <button id="q-posada-btn" type="button"
+                                        class="w-full flex items-center gap-2 rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] px-3 py-1.5 text-left hover:border-holyPurple/50 transition-colors">
+                                        <img id="q-posada-thumb" alt=""
+                                            class="w-9 h-9 rounded-lg object-cover bg-gray-200 shrink-0 hidden">
+                                        <span id="q-posada-label"
+                                            class="flex-1 min-w-0 text-sm font-semibold text-black dark:text-gray-300 truncate">Seleccione
+                                            una posada…</span>
+                                        <svg class="w-4 h-4 text-slate-800 shrink-0" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div id="q-posada-list"
+                                        class="hidden absolute left-0 right-0 top-full mt-1 z-30 max-h-60 overflow-y-auto rounded-xl border border-gray-200 dark:border-primary/30 bg-white dark:bg-[#18181b] shadow-lg flex flex-col">
+                                        <div
+                                            class="p-2 sticky top-0 bg-white dark:bg-[#1e1e1e] border-b border-gray-100 dark:border-[#333333] z-10 shrink-0">
+                                            <input id="q-posada-search" type="text" placeholder="Buscar posada..."
+                                                class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-semibold focus:border-holyPurple focus:outline-none">
+                                        </div>
+                                        <div id="q-posada-items" class="flex-1 overflow-y-auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Inclusiones</label>
+                                <textarea id="q-inclusiones" rows="6"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-semibold input-track"></textarea>
+                            </div>
+                        </div>
+                        <!-- Estado moved up -->
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Fecha
+                                    cotización</label>
+                                <input id="q-fecha-cot" type="date"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-semibold input-track">
+                            </div>
+                            <div id="q-aerolinea-wrapper">
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Aerolínea</label>
+                                <input id="q-aerolinea" type="text" placeholder="AEROCARIBE"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-bold uppercase input-track">
+                            </div>
+                        </div>
+
+                        <div id="q-vuelos-section" class="space-y-4">
+                            <div
+                                class="rounded-2xl border border-holyPurple/20 bg-holyPurple/5 dark:bg-[#18181b] dark:border-primary/40 p-3">
+                                <p
+                                    class="text-[11px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-2">
+                                    Vuelo Ida</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Origen</label>
+                                        <input id="q-origen-ida" type="text" placeholder="CARACAS"
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-bold input-track">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Destino
+                                            <span class="text-holyPurple dark:text-primaryLight">(fijo)</span></label>
+                                        <input id="q-destino-ida" type="text" readonly
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-gray-100 dark:bg-[#2a2a2a] px-2 py-1.5 text-xs font-bold cursor-not-allowed text-slate-900"
+                                            placeholder="—">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Fecha
+                                            / Check-In</label>
+                                        <input id="q-fecha-ida" type="date"
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-semibold input-track cot-nights">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-1">
+                                        <div>
+                                            <label
+                                                class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Salida</label>
+                                            <input id="q-salida-ida" type="time"
+                                                class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-1 py-1.5 text-xs font-semibold input-track">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Llegada</label>
+                                            <input id="q-llegada-ida" type="time"
+                                                class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-1 py-1.5 text-xs font-semibold input-track">
+                                        </div>
+                                    </div>
+                                    <div id="wrap-duracion-ida" class="mt-1 hidden text-right col-span-2">
+                                        <span
+                                            class="text-[9px] font-extrabold text-holyPurple dark:text-primaryLight tracking-wider uppercase">DURACIÓN:
+                                        </span>
+                                        <span id="duracion-ida-text"
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">--</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="rounded-2xl border border-holyPurple/20 bg-holyPurple/5 dark:bg-[#18181b] dark:border-primary/40 p-3">
+                                <p
+                                    class="text-[11px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-2">
+                                    Vuelo Retorno</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Origen
+                                            <span class="text-holyPurple dark:text-primaryLight">(fijo)</span></label>
+                                        <input id="q-origen-ret" type="text" readonly
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-gray-100 dark:bg-[#2a2a2a] px-2 py-1.5 text-xs font-bold cursor-not-allowed text-slate-900"
+                                            placeholder="—">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Destino</label>
+                                        <input id="q-destino-ret" type="text" placeholder="CARACAS"
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-bold input-track">
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Fecha
+                                            / Check-Out</label>
+                                        <input id="q-fecha-ret" type="date"
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-semibold input-track cot-nights">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-1">
+                                        <div>
+                                            <label
+                                                class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Salida</label>
+                                            <input id="q-salida-ret" type="time"
+                                                class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-1 py-1.5 text-xs font-semibold input-track">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Llegada</label>
+                                            <input id="q-llegada-ret" type="time"
+                                                class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-1 py-1.5 text-xs font-semibold input-track">
+                                        </div>
+                                    </div>
+                                    <div id="wrap-duracion-ret" class="mt-1 hidden text-right col-span-2">
+                                        <span
+                                            class="text-[9px] font-extrabold text-holyPurple dark:text-primaryLight tracking-wider uppercase">DURACIÓN:
+                                        </span>
+                                        <span id="duracion-ret-text"
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Vuelos Dinámicos (SOLO VUELO) -->
+                        <div id="q-vuelos-dinamicos-section" class="space-y-4 hidden">
+                            <div class="grid grid-cols-1 gap-2">
+                                <div>
+                                    <label
+                                        class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">PNR
+                                        / Cód. Reserva</label>
+                                    <input id="q-pnr" type="text" placeholder="FGTYH7"
+                                        class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-bold uppercase input-track">
+                                </div>
+                            </div>
+
+                            <!-- Lista de vuelos dinámicos -->
+                            <div id="q-vuelos-list" class="space-y-3">
+                                <!-- Se inyectan vuelos aquí por JS -->
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <button id="btn-add-vuelo"
+                                    class="flex-1 rounded-lg border-2 border-dashed border-holyPurple/30 dark:border-primary/40 text-holyPurple dark:text-primaryLight text-xs font-extrabold py-2 hover:bg-holyPurple/5 dark:hover:bg-primary/20">+
+                                    Añadir Vuelo (Ida/Ret/Des)</button>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <label
+                                        class="text-[10px] font-extrabold text-holyPurple dark:text-primaryLight uppercase">Cant.</label>
+                                    <input id="q-vuelo-qty" type="number" min="1" max="20" value="1"
+                                        class="w-12 rounded-lg border border-holyPurple/30 dark:border-primary/40 bg-white dark:bg-[#2a2a2a] text-center px-1 py-1.5 text-xs font-bold text-holyPurple dark:text-primaryLight">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Franquicia
+                                    de Equipaje</label>
+                                <textarea id="q-equipaje" rows="3" placeholder="Ej. 1 MALETA DE 23KG"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-semibold input-track"></textarea>
+                            </div>
+                        </div>
+
+                        <div id="q-estancia-section"
+                            class="rounded-2xl border border-holyPurple/20 bg-holyPurple/5 dark:bg-[#18181b] dark:border-primary/40 p-3 hidden">
+                            <p
+                                class="text-[11px] font-extrabold text-holyPurple dark:text-primaryLight uppercase tracking-wide mb-2">
+                                Fechas de Estancia</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label
+                                        class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Check
+                                        In</label>
+                                    <input id="q-checkin" type="date"
+                                        class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-semibold input-track cot-nights">
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Check
+                                        Out</label>
+                                    <input id="q-checkout" type="date"
+                                        class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-semibold input-track cot-nights">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Adultos</label>
+                                <input id="q-adultos" type="number" min="0" placeholder="0"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-sm font-bold input-track">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Niños</label>
+                                <input id="q-ninos" type="number" min="0" placeholder="0"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-sm font-bold input-track">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Infantes</label>
+                                <input id="q-infantes" type="number" min="0" placeholder="0"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-sm font-bold input-track">
+                            </div>
+                        </div>
+
+
+
+                        <div class="grid grid-cols-3 gap-2 items-end">
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Tarifa
+                                    por adulto</label>
+                                <input id="q-tarifa-ad" type="number" step="0.01" min="0" placeholder="0.00"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-sm font-bold input-track">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Niño</label>
+                                <input id="q-tarifa-nin" type="number" step="0.01" min="0" placeholder="0.00"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-sm font-bold input-track">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Moneda</label>
+                                <select id="q-moneda"
+                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-bold input-track">
+                                    <option value="">Moneda</option>
+                                    <option value="USD">USD $</option>
+                                    <option value="EUR">EUR €</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="q-total-chip"
+                            class="rounded-2xl bg-holyPurple text-white p-4 flex items-center justify-between">
+                            <span class="text-xs font-extrabold uppercase tracking-wide">Total</span>
+                            <span class="font-poppins font-black text-2xl">$0</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btn-pdf-save"
+                                class="flex items-center justify-center gap-2 rounded-xl bg-holyMintBright dark:bg-gradient-to-br dark:from-[#e74c3c] dark:to-[#c0392b] text-slate-900 dark:text-white px-3 py-3 text-sm font-extrabold hover:bg-emerald-400 dark:hover:shadow-[0_15px_40px_rgba(231,76,60,0.5)] dark:hover:-translate-y-1 transition-all shadow dark:shadow-[0_10px_30px_rgba(231,76,60,0.3)]">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 16a4 4 0 01-.88-7.9 5 5 0 0111.88-1A3.5 3.5 0 0118 14.5M9 17l3 3m0 0l3-3m-3 3V10">
+                                    </path>
+                                </svg>
+                                Generar PDF
+                            </button>
+                            <button id="btn-pdf-print"
+                                class="flex items-center justify-center gap-2 rounded-xl border-2 border-holyPurple dark:border-primary text-holyPurple dark:text-primaryLight px-3 py-3 text-sm font-extrabold hover:bg-holyPurple hover:text-white dark:hover:bg-primary transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 9V3h12v6m0 0a2 2 0 012 2v6h-4m-8 0v4h8v-4m-8 0H4a2 2 0 01-2-2v-2a2 2 0 012-2h16a2 2 0 012 2v2a2 2 0 01-2 2h-4m-8-4h.01">
+                                    </path>
+                                </svg>
+                                Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
+                    <div
+                        class="no-print px-4 py-2 flex items-center gap-2 bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
+                        <span
+                            class="text-xs font-bold text-holyPurple dark:text-primaryLight uppercase tracking-wide">Vista
+                            previa del PDF</span>
+                        <span id="pv-cotizacion-nombre"
+                            class="text-xs text-slate-800 dark:text-gray-400 font-semibold"></span>
+                        <div class="flex-1"></div>
+                        <div class="flex rounded-full bg-gray-100 dark:bg-white/10 p-0.5 text-[11px] font-bold">
+                            <button class="pg-btn px-3 py-1 rounded-full bg-holyPurple text-white"
+                                data-stage="stage-cotizacion" data-m="all">Ambas</button>
+                            <button class="pg-btn px-3 py-1 rounded-full text-black" data-stage="stage-cotizacion"
+                                data-m="page1">Página 1</button>
+                            <button class="pg-btn px-3 py-1 rounded-full text-black" data-stage="stage-cotizacion"
+                                data-m="page2">Página 2</button>
+                        </div>
+                    </div>
+                    <div id="stage-cotizacion" class="preview-stage flex-1 overflow-x-hidden overflow-y-auto p-4"></div>
+                </div>
+            </section>
+
+            <!-- VISTA: CATÁLOGO -->
+            <section id="view-catalogo"
+                class="view hidden flex-1 min-h-0 p-6 bg-gray-100 dark:bg-transparent overflow-y-auto">
+                <div class="max-w-3xl mx-auto space-y-5">
+                    <div class="rounded-2xl bg-white dark:bg-[#141414] shadow-md p-6 dark:border dark:border-white/5">
+                        <h2 class="text-holyPurple dark:text-primaryLight font-extrabold text-lg uppercase">Catálogo de
+                            Plantillas</h2>
+                        <p class="text-sm text-slate-900 dark:text-gray-400 font-semibold">Exporta el catálogo master
+                            para distribuirlo a los agentes, o importa el archivo recibido para clonar el catálogo en
+                            este equipo.</p>
+                        <p id="cat-stats" class="mt-3 text-xs font-bold text-slate-800 dark:text-gray-400"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div
+                            class="rounded-2xl bg-white dark:bg-[#141414] shadow-md p-6 flex flex-col dark:border dark:border-white/5">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-holyPurple/10 flex items-center justify-center text-holyPurple mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-holyPurple dark:text-primaryLight font-extrabold text-sm uppercase mb-1">
+                                Exportar Plantillas</h3>
+                            <p class="text-xs text-slate-900 dark:text-gray-400 font-semibold mb-4">Genera un único
+                                archivo <code
+                                    class="text-holyPurple dark:text-primaryLight">catalogo_plantillas.json</code> con
+                                todo el catálogo.</p>
+                            <button id="btn-export"
+                                class="mt-auto flex items-center justify-center gap-2 rounded-xl bg-holyPurple dark:bg-gradient-to-br dark:from-primary dark:to-primaryDark text-white px-4 py-3 text-sm font-extrabold hover:bg-holyPurpleDark transition-all shadow dark:shadow-[0_10px_30px_rgba(168,42,188,0.3)] dark:hover:shadow-[0_15px_40px_rgba(168,42,188,0.5)] dark:hover:-translate-y-1">
+                                Exportar catálogo
+                            </button>
+                        </div>
+
+                        <div
+                            class="rounded-2xl bg-white dark:bg-[#141414] shadow-md p-6 flex flex-col dark:border dark:border-white/5">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-holyPurple/10 flex items-center justify-center text-holyPurple mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-holyPurple dark:text-primaryLight font-extrabold text-sm uppercase mb-1">
+                                Importar Plantillas</h3>
+                            <p class="text-xs text-slate-900 dark:text-gray-400 font-semibold mb-4">Carga el archivo
+                                <code class="text-holyPurple dark:text-primaryLight">.json</code> recibido. Los ids
+                                duplicados se pueden reemplazar u omitir.
+                            </p>
+                            <input id="file-import" type="file" accept=".json,application/json" class="hidden">
+                            <button id="btn-import"
+                                class="mt-auto flex items-center justify-center gap-2 rounded-xl border-2 border-holyPurple dark:border-primary text-holyPurple dark:text-primaryLight px-4 py-3 text-sm font-extrabold hover:bg-holyPurple dark:hover:bg-primary/20 hover:text-white transition-all">
+                                Importar catálogo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VISTA: GESTIÓN DE POSADAS — requiere template:create -->
+            <section id="view-gestion-posadas" class="view hidden flex-1 min-h-0 p-6 bg-gray-100 dark:bg-transparent overflow-y-auto">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-holyPurple dark:text-primaryLight font-extrabold text-lg uppercase">Gestión de
+                                Posadas</h2>
+                            <p class="text-xs text-slate-900 dark:text-gray-400 font-semibold">Crea y edita las posadas
+                                del catálogo. Visibles para todos los cotizadores.</p>
+                        </div>
+                        <button id="btn-nueva-posada"
+                            class="bg-holyMint text-white font-bold py-2.5 px-5 rounded-xl hover:bg-holyMintBright transition shadow-lg shadow-holyMint/30">
+                            + Nueva Posada
+                        </button>
+                    </div>
+                    <div class="rounded-2xl bg-white dark:bg-[#141414] shadow-md overflow-hidden dark:border dark:border-white/5">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-100 dark:border-white/5 text-left">
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Posada</th>
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Destino</th>
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Estado</th>
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-posadas"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VISTA: USUARIOS — requiere user:read -->
+            <section id="view-usuarios" class="view hidden flex-1 min-h-0 p-6 bg-gray-100 dark:bg-transparent overflow-y-auto">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-holyPurple dark:text-primaryLight font-extrabold text-lg uppercase">Usuarios</h2>
+                            <p class="text-xs text-slate-900 dark:text-gray-400 font-semibold">Cuentas con acceso al
+                                cotizador. El acceso es el email: el usuario entra inmediatamente tras ser creado.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="btn-mi-cuenta"
+                                class="bg-white border-2 border-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl hover:border-holyPurple transition">
+                                Mi cuenta
+                            </button>
+                            <button id="btn-nuevo-usuario" hidden
+                                class="bg-holyPurple text-white font-bold py-2.5 px-5 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">
+                                + Nuevo Usuario
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 mb-4">
+                        <input type="text" id="usuarios-buscar" placeholder="Buscar por nombre o email..."
+                            class="border-2 border-gray-200 rounded-xl p-2.5 text-sm font-medium focus:border-holyPurple outline-none flex-1 min-w-[200px]">
+                        <select id="usuarios-filtro-rol"
+                            class="border-2 border-gray-200 rounded-xl p-2.5 text-sm font-bold text-gray-700 focus:border-holyPurple outline-none">
+                            <option value="todos">Todos los roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="encargado">Encargado</option>
+                            <option value="agente">Agente</option>
+                        </select>
+                        <span id="usuarios-total" class="text-xs font-bold text-gray-500"></span>
+                    </div>
+                    <div class="rounded-2xl bg-white dark:bg-[#141414] shadow-md overflow-hidden dark:border dark:border-white/5">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-100 dark:border-white/5 text-left">
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Nombre / Email</th>
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Rol</th>
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase">Estado</th>
+                                    <th class="p-4 text-xs font-black text-gray-500 uppercase text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-usuarios"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL NUEVA POSADA — requiere template:create -->
+    <div id="modal-posada" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-xl font-black text-gray-800">Nueva Posada</h3>
+                <button id="cerrar-modal-posada" class="text-gray-400 hover:text-gray-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <form id="form-posada" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre de la Posada</label>
+                            <input type="text" id="posada-nombre" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Destino</label>
+                            <input type="text" id="posada-destino" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Inclusiones (una por línea)</label>
+                        <textarea id="posada-inclusiones" rows="4" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium text-sm"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-2">Fotos (Arrastra y suelta)</label>
+                        <div id="drop-zone" class="border-2 border-dashed border-holyMint bg-holyMint/5 rounded-2xl p-8 text-center cursor-pointer hover:bg-holyMint/10 transition">
+                            <svg class="w-12 h-12 text-holyMint mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <p class="font-bold text-gray-700">Arrastra fotos aquí o haz clic para subir</p>
+                            <p class="text-xs text-gray-500 mt-1">JPG, PNG, WebP (Máx 5MB)</p>
+                            <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                        </div>
+                        <div id="preview-fotos" class="grid grid-cols-4 gap-4 mt-4"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button type="button" id="cancelar-posada" class="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-200 transition">Cancelar</button>
+                <button type="submit" form="form-posada" id="guardar-posada-btn" class="bg-holyPurple text-white font-bold py-2.5 px-6 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Guardar Posada</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO USUARIO — requiere user:create -->
+    <div id="modal-usuario" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-xl font-black text-gray-800">Crear Usuario</h3>
+                <button id="cerrar-modal-usuario" class="text-gray-400 hover:text-gray-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="form-usuario" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre Completo</label>
+                        <input type="text" id="usuario-nombre" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Email</label>
+                        <input type="email" id="usuario-email" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contraseña (Mín. 8)</label>
+                        <div class="flex gap-2">
+                            <input type="password" id="usuario-pass" required minlength="8" autocomplete="new-password" class="flex-1 border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                            <button type="button" id="usuario-pass-toggle" class="px-3 rounded-xl border-2 border-gray-200 text-xs font-bold text-gray-500">Ver</button>
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-1">El empleado entra de inmediato con su email y esta contraseña.</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Rol</label>
+                        <select id="usuario-rol" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-bold text-gray-700">
+                            <option value="agente">AGENTE — solo cotiza y genera PDFs</option>
+                            <option value="encargado">ENCARGADO — gestiona posadas y ve usuarios</option>
+                        </select>
+                        <p class="text-[11px] text-gray-500 mt-1">Por seguridad no se puede crear otro administrador
+                            desde la aplicación.</p>
+                    </div>
+                    <div id="usuario-error" class="text-red-500 text-sm font-semibold text-center hidden"></div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button type="submit" form="form-usuario" id="guardar-usuario-btn" class="w-full bg-holyPurple text-white font-bold py-3 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Crear Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR USUARIO — requiere user:update -->
+    <div id="modal-usuario-editar" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-xl font-black text-gray-800">Editar Usuario</h3>
+                <button id="cerrar-modal-usuario-editar" class="text-gray-400 hover:text-gray-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="form-usuario-editar" class="space-y-4">
+                    <input type="hidden" id="usuario-edit-id">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre Completo</label>
+                        <input type="text" id="usuario-edit-nombre" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Rol</label>
+                        <select id="usuario-edit-rol" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-bold text-gray-700">
+                            <option value="agente">AGENTE — solo cotiza y genera PDFs</option>
+                            <option value="encargado">ENCARGADO — gestiona posadas y ve usuarios</option>
+                        </select>
+                    </div>
+                    <div id="usuario-edit-error" class="text-red-500 text-sm font-semibold text-center hidden"></div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button type="submit" form="form-usuario-editar" id="guardar-usuario-edit-btn" class="w-full bg-holyPurple text-white font-bold py-3 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MI CUENTA — cambio de contraseña propia -->
+    <div id="modal-mi-cuenta" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-xl font-black text-gray-800">Mi cuenta</h3>
+                <button id="cerrar-modal-mi-cuenta" class="text-gray-400 hover:text-gray-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="form-mi-cuenta" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nueva contraseña (Mín. 8)</label>
+                        <input type="password" id="mi-cuenta-pass1" required minlength="8" autocomplete="new-password" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Repetir contraseña</label>
+                        <input type="password" id="mi-cuenta-pass2" required minlength="8" autocomplete="new-password" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-holyPurple outline-none transition font-medium">
+                    </div>
+                    <div id="mi-cuenta-error" class="text-red-500 text-sm font-semibold text-center hidden"></div>
+                    <div id="mi-cuenta-ok" class="text-green-600 text-sm font-semibold text-center hidden"></div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button type="submit" form="form-mi-cuenta" id="guardar-mi-cuenta-btn" class="w-full bg-holyPurple text-white font-bold py-3 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">Actualizar Contraseña</button>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /#app-shell -->
+
+    <!-- MODAL DE IMPORTACIÓN -->
+    <div id="import-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl max-w-md w-full p-6 dark:border dark:border-white/5">
+            <h3 class="text-holyPurple dark:text-primaryLight font-extrabold text-lg uppercase">Importar plantillas</h3>
+            <p id="import-msg" class="mt-2 text-sm text-black dark:text-gray-300 font-semibold"></p>
+            <div class="mt-5 grid grid-cols-1 gap-2">
+                <button id="imp-reemplazar"
+                    class="rounded-xl bg-holyPurple dark:bg-gradient-to-br dark:from-primary dark:to-primaryDark text-white px-4 py-2.5 text-sm font-extrabold hover:bg-holyPurpleDark transition-all dark:shadow-[0_5px_15px_rgba(168,42,188,0.3)]">Reemplazar
+                    duplicadas</button>
+                <button id="imp-omitir"
+                    class="rounded-xl border-2 border-holyPurple dark:border-primary text-holyPurple dark:text-primaryLight px-4 py-2.5 text-sm font-extrabold hover:bg-holyPurple dark:hover:bg-primary/20 hover:text-white transition-all">Omitir
+                    duplicadas</button>
+                <button id="imp-cancelar"
+                    class="rounded-xl text-slate-900 dark:text-gray-400 px-4 py-2.5 text-sm font-bold hover:bg-gray-100 dark:hover:bg-white/10">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center dark:border dark:border-white/5">
+            <h3 class="text-holyPurple dark:text-primaryLight font-extrabold text-lg uppercase mb-2">Confirmar</h3>
+            <p id="confirm-msg" class="text-sm text-black dark:text-gray-300 font-semibold mb-6"></p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirm-yes"
+                    class="rounded-xl bg-holyPurple dark:bg-gradient-to-br dark:from-primary dark:to-primaryDark text-white px-6 py-2.5 text-sm font-extrabold hover:bg-holyPurpleDark transition-all dark:shadow-[0_5px_15px_rgba(168,42,188,0.3)]">Sí</button>
+                <button id="confirm-no"
+                    class="rounded-xl border-2 border-holyPurple dark:border-primary text-holyPurple dark:text-primaryLight px-6 py-2.5 text-sm font-extrabold hover:bg-holyPurple dark:hover:bg-primary/20 hover:text-white transition-all">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- SDK de Supabase (necesario antes de supabase-client.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-client.js?v=5"></script>
+    <script src="js/roles.js?v=1"></script>
+    <script src="js/auth.js?v=1"></script>
+    <script src="js/quoteModel.js?v=4"></script>
+    <script src="js/templateModel.js?v=4"></script>
+    <script src="js/exporter.js?v=4"></script>
+    <script src="js/imagedb.js?v=4"></script>
+    <script src="js/storage.js?v=5"></script>
+    <script src="js/preview.js?v=4"></script>
+    <script src="js/pdfManager.js?v=4"></script>
+    <script src="js/userService.js?v=1"></script>
+    <script src="js/gestion.js?v=2"></script>
+    <script src="js/app.js?v=6"></script>
+
+</body>
+
+</html>

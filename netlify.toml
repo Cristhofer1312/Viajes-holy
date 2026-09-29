@@ -1,0 +1,28 @@
+[build]
+  publish = "src"
+  functions = "netlify/functions"
+  command = "echo 'Static site - no build step'"
+
+[dev]
+  publish = "src"
+
+[functions]
+  node_bundler = "zisi"
+  # src/js/roles.js es la fuente única de permisos: la usan tanto el
+  # navegador como _lib/auth.js en el servidor. Se incluye explícitamente
+  # para que el bundler no lo deje fuera.
+  included_files = ["src/js/roles.js"]
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirige /api/* a las Netlify Functions correspondientes
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Permite que admin.html sea accedido directamente
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200

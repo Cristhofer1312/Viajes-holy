@@ -97,12 +97,12 @@ html.dark input::placeholder, html.dark textarea::placeholder {
   display: none;
 }
 
-/* Móvil/Tablet (<1024px): A4 a tamaño real con scroll horizontal.
-   Evita texto ilegible por escala 0.45 y elimina el doble scroll
-   vertical (la section ya hace scroll global en max-lg). */
+/* Móvil/Tablet (<1024px): la hoja A4 se escala al ancho con transform
+   (ver fitStage en app.js), igual que en desktop: legible sin scroll
+   horizontal. El scroll vertical lo maneja la section (max-lg:overflow-y-auto). */
 @media screen and (max-width: 1023.5px) {
   .preview-stage {
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
   }
@@ -112,13 +112,6 @@ html.dark input::placeholder, html.dark textarea::placeholder {
     max-width: none;
     margin-left: auto;
     margin-right: auto;
-  }
-  .preview-stage .scale-box {
-    transform: none;
-  }
-  .preview-stage .preview-item {
-    height: auto !important;
-    overflow: visible;
   }
 }
 

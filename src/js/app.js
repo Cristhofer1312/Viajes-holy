@@ -559,17 +559,10 @@
     var stage = $(stageId);
     if (!stage) return;
     requestAnimationFrame(function () {
-      // En móvil (<1024px) no se escala: A4 a tamaño real con scroll
-      // horizontal (ver CSS .preview-stage). Solo limpiar alturas inline.
-      if (window.matchMedia && window.matchMedia('(max-width: 1023.5px)').matches) {
-        stage.querySelectorAll('.scale-box').forEach(function (b) {
-          b.style.setProperty('--s', '1');
-        });
-        stage.querySelectorAll('.preview-item').forEach(function (item) {
-          item.style.height = 'auto';
-        });
-        return;
-      }
+      // Escala siempre al ancho disponible (desktop y móvil): la hoja A4
+      // de 794px se encoge con transform para que sea legible sin scroll
+      // horizontal también en teléfonos. El scroll vertical lo maneja la
+      // section en móvil (max-lg:overflow-y-auto) y el stage en desktop.
       var w = stage.clientWidth;
       // Si el stage aún está oculto (clientWidth 0), reintentar cuando pinte.
       // Antes quedaba escala 0/sucia solo en algunos equipos por timing.
@@ -659,9 +652,85 @@
   window.__holyBuild = 'v9-blankfix';
 
   // ---------------------------------------------------------------- COTIZACIÓN
+  // ---------------------------------------------------------------- DROPDOWN POSADA
+  // La lista vive dentro del panel del formulario (overflow-y-auto) y ahí
+  // se recortaba al hacer scroll. Al abrirla se traslada a <body> como
+  // portal fixed posicionado bajo el botón; al cerrar vuelve a su wrap.
+  var posadaPortalHome = null; // padre original de la lista
+  var posadaPortalNext = null; // hermano siguiente original
+  var posadaPortalActive = false;
+
+  function dropdownPosadaAbierto() {
+    var list = $('q-posada-list');
+    return !!(list && !list.classList.contains('hidden'));
+  }
+
+  function posicionarDropdownPosada() {
+    var btn = $('q-posada-btn');
+    var list = $('q-posada-list');
+    if (!btn || !list) return;
+    var r = btn.getBoundingClientRect();
+    var vw = window.innerWidth || document.documentElement.clientWidth || 360;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 640;
+    var w = Math.max(240, Math.min(r.width, vw - 16));
+    var left = Math.max(8, Math.min(r.left, vw - w - 8));
+    var gap = 4;
+    var estH = Math.min(list.scrollHeight || 320, vh * 0.5);
+    var top;
+    if (r.bottom + gap + estH > vh && r.top - gap - estH > 8) {
+      top = Math.max(8, r.top - gap - estH);
+    } else {
+      top = Math.min(r.bottom + gap, vh - 60);
+    }
+    list.style.left = Math.round(left) + 'px';
+    list.style.top = Math.round(top) + 'px';
+    list.style.width = Math.round(w) + 'px';
+  }
+
+  function abrirDropdownPosada() {
+    var list = $('q-posada-list');
+    if (!list) return;
+    if (!posadaPortalActive) {
+      posadaPortalHome = list.parentNode;
+      posadaPortalNext = list.nextSibling;
+      document.body.appendChild(list);
+      list.style.position = 'fixed';
+      list.style.zIndex = '70';
+      list.style.marginTop = '0';
+      list.style.right = 'auto';
+      posadaPortalActive = true;
+      window.addEventListener('scroll', posicionarDropdownPosada, true);
+      window.addEventListener('resize', posicionarDropdownPosada);
+    }
+    list.classList.remove('hidden');
+    posicionarDropdownPosada();
+  }
+
   function cerrarDropdownPosada() {
     var list = $('q-posada-list');
-    if (list) list.classList.add('hidden');
+    if (!list) return;
+    list.classList.add('hidden');
+    if (posadaPortalActive) {
+      list.style.position = '';
+      list.style.zIndex = '';
+      list.style.marginTop = '';
+      list.style.right = '';
+      list.style.left = '';
+      list.style.top = '';
+      list.style.width = '';
+      if (posadaPortalHome) {
+        if (posadaPortalNext && posadaPortalNext.parentNode === posadaPortalHome) {
+          posadaPortalHome.insertBefore(list, posadaPortalNext);
+        } else {
+          posadaPortalHome.appendChild(list);
+        }
+      }
+      posadaPortalHome = null;
+      posadaPortalNext = null;
+      posadaPortalActive = false;
+      window.removeEventListener('scroll', posicionarDropdownPosada, true);
+      window.removeEventListener('resize', posicionarDropdownPosada);
+    }
   }
 
   /**
@@ -729,6 +798,9 @@
         label.classList.remove('text-black', 'dark:text-white', 'font-bold');
       }
     }
+    // Si el dropdown está abierto como portal, reajustar su posición
+    // tras re-renderizar los items (cambia la altura de la lista).
+    if (posadaPortalActive) posicionarDropdownPosada();
   }
 
   function buildQuoteFromForm() {
@@ -1176,8 +1248,8 @@
     if (posadaBtn) {
       posadaBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        var list = $('q-posada-list');
-        if (list) list.classList.toggle('hidden');
+        if (dropdownPosadaAbierto()) cerrarDropdownPosada();
+        else abrirDropdownPosada();
       });
     }
 
@@ -1201,7 +1273,9 @@
 
     document.addEventListener('click', function (e) {
       var wrap = $('q-posada-wrap');
-      if (wrap && !wrap.contains(e.target)) {
+      var list = $('q-posada-list');
+      // La lista puede estar en <body> como portal: no cerrar por clics dentro.
+      if (wrap && !wrap.contains(e.target) && !(list && list.contains(e.target))) {
         cerrarDropdownPosada();
       }
     });
@@ -1370,7 +1444,7 @@
       }
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') cerrarMenu();
+      if (e.key === 'Escape') { cerrarMenu(); cerrarDropdownPosada(); }
     });
 
     $('btn-import').addEventListener('click', function () { $('file-import').click(); });

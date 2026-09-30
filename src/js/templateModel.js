@@ -8,7 +8,6 @@
 
   'use strict';
 
-  var MAX_IMAGE_KB = 500;
   var REQUIRED = ['nombrePosada', 'destino', 'layoutFotos', 'imagenesBase64', 'inclusiones'];
   var LAYOUTS = [1, 2, 3, 4];
 
@@ -56,22 +55,7 @@
       errors.push('Hay más imágenes que el layout configurado (' + t.layoutFotos + ')');
     }
 
-    var pesoTotal = 0;
-    (t.imagenesBase64 || []).forEach(function (img) {
-      pesoTotal += estimarBytes(img);
-    });
-    if (pesoTotal > MAX_IMAGE_KB * 1024) {
-      errors.push('Las imágenes superan el límite de ' + MAX_IMAGE_KB + 'KB por imagen');
-    }
-
     return { ok: errors.length === 0, errors: errors };
-  }
-
-  function estimarBytes(dataUrl) {
-    if (!dataUrl) return 0;
-    var base = dataUrl.indexOf(',') >= 0 ? dataUrl.slice(dataUrl.indexOf(',') + 1) : dataUrl;
-    base = base.replace(/=+$/, '');
-    return Math.floor(base.length * 3 / 4);
   }
 
   function create(data, existingIds) {
@@ -96,13 +80,11 @@
   }
 
   return {
-    MAX_IMAGE_KB: MAX_IMAGE_KB,
     REQUIRED: REQUIRED,
     LAYOUTS: LAYOUTS,
     slugify: slugify,
     uniqueId: uniqueId,
     validate: validate,
-    estimarBytes: estimarBytes,
     create: create,
     portada: portada,
   };

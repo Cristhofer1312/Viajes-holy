@@ -90,6 +90,46 @@ html.dark input::placeholder, html.dark textarea::placeholder {
   overflow: hidden;
 }
 
+/* Contenedor de aislamiento creado por pdfManager.js al imprimir:
+   recibe las 2 hojas de la vista visible y es lo único visible en
+   papel. En pantalla siempre oculto. */
+#holy-print-root {
+  display: none;
+}
+
+/* Móvil/Tablet (<1024px): A4 a tamaño real con scroll horizontal.
+   Evita texto ilegible por escala 0.45 y elimina el doble scroll
+   vertical (la section ya hace scroll global en max-lg). */
+@media screen and (max-width: 1023.5px) {
+  .preview-stage {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+  .preview-stage .scale-box,
+  .preview-stage .preview-item {
+    width: 794px;
+    max-width: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .preview-stage .scale-box {
+    transform: none;
+  }
+  .preview-stage .preview-item {
+    height: auto !important;
+    overflow: visible;
+  }
+}
+
+/* Inputs fecha/hora en pantallas pequeñas: evita desborde y zoom iOS */
+@media screen and (max-width: 640px) {
+  input[type="date"], input[type="time"] {
+    min-width: 0;
+    font-size: 16px;
+  }
+}
+
 /* Scrollbar de la app */
 ::-webkit-scrollbar {
   width: 8px;
@@ -146,20 +186,91 @@ html.dark ::-webkit-scrollbar-thumb {
 @media print {
   html, body {
     width: 210mm !important;
-    height: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
     overflow: visible !important;
+    display: block !important;
   }
 
+  /* Elementos de UI que nunca deben aparecer en el PDF.
+     Se ocultan también por JS en pdfManager.js (style inline)
+     como capa primaria, y aquí como respaldo CSS. */
   .no-print,
   .form-panel,
+  aside,
+  #sidebar,
   .toast,
   #toast,
   #confirm-modal,
-  #import-modal {
+  #import-modal,
+  #modal-posada,
+  #modal-usuario,
+  #modal-usuario-editar,
+  #modal-mi-cuenta,
+  #login-overlay,
+  #menu-overlay,
+  #q-posada-list,
+  [id^="modal-"],
+  .hidden {
     display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Solo la vista activa se imprime; el filtro Ambas/P1/P2 usa display
+     inline que debe ignorarse en papel para garantizar las 2 hojas. */
+  .view.hidden {
+    display: none !important;
+  }
+  #stage-plantillas-p1,
+  #stage-plantillas-p2,
+  #stage-cotizacion-p1,
+  #stage-cotizacion-p2 {
+    display: block !important;
+    height: auto !important;
+  }
+
+  /* Las utilidades responsive (max-lg:overflow-y-auto de las sections,
+     flex-1/min-h-0 de main y #app-shell) casan en impresión porque la
+     página A4 mide ~794px < 1024px. Sin este reset la section se vuelve
+     contenedor con scroll en papel: recorta, muestra barras y derrama
+     el contenido en páginas extensas.
+     Además Chrome no fragmenta contenedores flex entre páginas: TODA la
+     cadena de ancestros de .page-sheet debe ser block en papel
+     (body > #app-shell > div > main > section > columna > stage > item).
+     Solo .page-sheet conserva flex + 297mm fijos. */
+  section.view,
+  section.view > div,
+  main,
+  #app-shell,
+  #app-shell > div {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  /* ── PÁGINAS EN BLANCO: el div de la columna derecha (preview) del grid
+     tiene clases de padding p-3/p-4 y gap que en modo block suman espacio
+     equivalente a 1-2 páginas en blanco antes de los page-sheet.
+     Se eliminan todos los espaciados de esa cadena de contenedores. */
+  section.view > div:not(.form-panel),
+  .preview-stage,
+  .scale-box {
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* Nunca imprimir barras de scroll */
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+  * {
+    scrollbar-width: none !important;
   }
 
   .preview-stage {
@@ -171,6 +282,18 @@ html.dark ::-webkit-scrollbar-thumb {
     width: auto !important;
     height: auto !important;
     overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    /* El corte va aquí (fallback sin aislamiento JS): cada .page-sheet
+       es hija única de su .scale-box, así que .page-sheet:last-child
+       casaba con TODAS y anulaba el break de la primera hoja. */
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .preview-item:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .scale-box {
@@ -190,8 +313,8 @@ html.dark ::-webkit-scrollbar-thumb {
     box-shadow: none !important;
     margin: 0 !important;
     border-radius: 0 !important;
-    page-break-after: always !important;
-    break-after: page !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     box-sizing: border-box !important;
@@ -210,6 +333,24 @@ html.dark ::-webkit-scrollbar-thumb {
   }
 
   .page-sheet:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Ruta normal (con aislamiento JS): las hojas son hermanas dentro de
+     #holy-print-root → aquí :last-child sí discrimina primera/última. */
+  #holy-print-root {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #holy-print-root .page-sheet {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  #holy-print-root .page-sheet:last-child {
     page-break-after: auto !important;
     break-after: auto !important;
   }

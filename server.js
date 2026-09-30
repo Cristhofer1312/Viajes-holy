@@ -109,7 +109,13 @@ const server = http.createServer((req, res) => {
         res.writeHead(500);
         res.end('Error loading static file');
       } else {
-        res.writeHead(200, { 'Content-Type': contentType });
+        // Sin caché en desarrollo: html/js/css siempre frescos del disco.
+        // Evita que el navegador imprima o ejecute versiones viejas.
+        var headers = { 'Content-Type': contentType };
+        if (ext === '.html' || ext === '.js' || ext === '.css') {
+          headers['Cache-Control'] = 'no-store, must-revalidate';
+        }
+        res.writeHead(200, headers);
         res.end(content);
       }
     });

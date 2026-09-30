@@ -542,11 +542,16 @@
     var p = modoPlantilla ? Preview.buildTemplate(t) : Preview.buildPreview(t, q);
     var mode = stageProps(stageId).mode || 'all';
     var stage = $(stageId);
+    // SOLO VUELO devuelve page2 vacía (hoja única): no renderizar el
+    // segundo preview-item para no dejar caja/página en blanco.
+    var hasP2 = !!(p.page2 && String(p.page2).trim());
+    var hideP1 = (mode === 'page2' && hasP2);
     stage.innerHTML =
-      '<div class="preview-item" id="' + stageId + '-p1"' + (mode === 'page2' ? ' style="display:none"' : '') + '>' +
+      '<div class="preview-item" id="' + stageId + '-p1"' + (hideP1 ? ' style="display:none"' : '') + '>' +
       '<div class="scale-box">' + p.page1 + '</div></div>' +
-      '<div class="preview-item" id="' + stageId + '-p2"' + (mode === 'page1' ? ' style="display:none"' : '') + '>' +
-      '<div class="scale-box">' + p.page2 + '</div></div>';
+      (hasP2 ?
+        '<div class="preview-item" id="' + stageId + '-p2"' + (mode === 'page1' ? ' style="display:none"' : '') + '>' +
+        '<div class="scale-box">' + p.page2 + '</div></div>' : '');
     fitStage(stageId);
   }
 
@@ -554,6 +559,17 @@
     var stage = $(stageId);
     if (!stage) return;
     requestAnimationFrame(function () {
+      // En móvil (<1024px) no se escala: A4 a tamaño real con scroll
+      // horizontal (ver CSS .preview-stage). Solo limpiar alturas inline.
+      if (window.matchMedia && window.matchMedia('(max-width: 1023.5px)').matches) {
+        stage.querySelectorAll('.scale-box').forEach(function (b) {
+          b.style.setProperty('--s', '1');
+        });
+        stage.querySelectorAll('.preview-item').forEach(function (item) {
+          item.style.height = 'auto';
+        });
+        return;
+      }
       var w = stage.clientWidth;
       // Si el stage aún está oculto (clientWidth 0), reintentar cuando pinte.
       // Antes quedaba escala 0/sucia solo en algunos equipos por timing.
@@ -614,6 +630,33 @@
       b.className = b.dataset.m === m ? ACTIVE_PG : BASE_PG;
     });
   }
+
+  // Expuesto para PdfManager: antes de imprimir se fuerza "Ambas" para que
+  // el PDF siempre salga con las 2 páginas aunque el usuario esté viendo
+  // solo Página 1 o Página 2. Devuelve función restauradora del modo previo.
+  function forzarAmbasParaPrint() {
+    var activos = [];
+    ['stage-plantillas', 'stage-cotizacion'].forEach(function (id) {
+      var stage = $(id);
+      if (!stage) return;
+      // Solo importa el stage de la vista visible
+      var view = stage.closest ? stage.closest('.view') : null;
+      if (view && view.classList.contains('hidden')) return;
+      var prev = (stageProps(id).mode || 'all');
+      if (prev !== 'all') {
+        setPageMode(id, 'all');
+        activos.push({ id: id, prev: prev });
+      }
+    });
+    return function restaurar() {
+      activos.forEach(function (r) { setPageMode(r.id, r.prev); });
+    };
+  }
+  window.forzarAmbasParaPrint = forzarAmbasParaPrint;
+  window.setPageMode = setPageMode;
+  // Marcador de build: en consola debe leerse 'v9-blankfix'.
+  // Sirve para confirmar que el navegador ejecuta el código actual.
+  window.__holyBuild = 'v9-blankfix';
 
   // ---------------------------------------------------------------- COTIZACIÓN
   function cerrarDropdownPosada() {

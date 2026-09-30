@@ -225,6 +225,9 @@
   }
 
   // ---- PÁGINA 2 ----
+  // Nota: SOLO VUELO no llega aquí (buildPreview lo deriva a
+  // renderSoloVueloPDF de hoja única). Esta rama queda para
+  // COMPLETO / SOLO HOSPEDAJE.
   function renderPage2(t, q) {
     var incs = (q && q.inclusiones && q.inclusiones.length > 0) ? q.inclusiones : t.inclusiones;
     var items = (incs || []).map(function (inc) {
@@ -252,6 +255,119 @@
       '<div class="text-center pt-4 border-t border-gray-100">' +
       '<span class="text-[11px] text-slate-800 font-montserrat font-black tracking-wider uppercase">' + esc(t.nombrePosada) + ' - ' + esc(t.destino) + '</span></div>' +
       '</div>';
+  }
+
+  // ---- SOLO VUELO (modelo plantillas/preview.js: renderSoloVueloPDF) ----
+  // Hoja única aérea: header COTIZACIÓN AÉREA/PNR, tramos dinámicos con
+  // duración estimada, equipaje, restricciones y tarifas. Sin rastro de
+  // posada/destino/galería. page2 vacía a propósito.
+  function renderSoloVueloPDF(t, q) {
+    q = q || {};
+    var v = q.vuelo || {};
+    var vuelos = (v.dinamicos || []);
+    var pax = q.pasajeros || { adultos: 0, ninos: 0, infantes: 0 };
+    var tar = q.tarifas || {};
+    var moneda = tar.moneda || 'USD';
+    var money = function (n) {
+      return esc(root.Monext ? root.Monext.formatMoney(n, moneda) : n);
+    };
+
+    var vuelosHtml = vuelos.map(function (vd) {
+      return '' +
+        '<div class="flex items-start gap-8 mb-6" style="page-break-inside: avoid; break-inside: avoid;">' +
+        '<div class="w-16 pt-1">' +
+        '<h3 class="text-[#20B2AA] font-montserrat font-black text-[17px] tracking-wide">' + esc(vd.tipo) + '</h3>' +
+        '<div class="w-12 h-12 bg-[#800080] rounded-full flex items-center justify-center text-white mt-1">' +
+        '<svg class="w-7 h-7 transform -rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16V14L13,9V3.5C13,2.67 12.33,2 11.5,2C10.67,2 10,2.67 10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/></svg>' +
+        '</div></div>' +
+        '<div class="flex-1">' +
+        '<div class="flex justify-end mb-1">' +
+        '<span class="text-[#800080] font-montserrat font-black text-[14px] tracking-wider uppercase">FECHA: ' + esc(vd.fecha) + '</span>' +
+        '</div>' +
+        '<div class="grid grid-cols-12 items-center gap-4">' +
+        '<div class="col-span-3"><span class="text-[#64748b] font-montserrat font-black text-[12px] tracking-widest block uppercase">SALIDA</span></div>' +
+        '<div class="col-span-4"><span class="text-[#94a3b8] font-montserrat font-black text-[13px] tracking-wide uppercase">' + esc(vd.origen) + '</span></div>' +
+        '<div class="col-span-2 text-center"><span class="text-[#64748b] font-montserrat font-black text-[15px]">' + esc(vd.salida) + '</span></div>' +
+        '<div class="col-span-3 text-right"><span class="text-[#20B2AA] font-montserrat font-black text-[12px] tracking-widest block uppercase">DURACIÓN ESTIMADA</span></div>' +
+        '</div>' +
+        '<div class="grid grid-cols-12 items-center gap-4 my-1">' +
+        '<div class="col-span-3"></div><div class="col-span-4"></div>' +
+        '<div class="col-span-2 flex justify-center">' +
+        '<svg class="w-6 h-6 text-[#cbd5e1]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>' +
+        '</div>' +
+        '<div class="col-span-3 text-right"><span class="text-[#94a3b8] font-montserrat font-black text-[13px] uppercase">' + esc(vd.duracion) + '</span></div>' +
+        '</div>' +
+        '<div class="grid grid-cols-12 items-center gap-4">' +
+        '<div class="col-span-3"><span class="text-[#64748b] font-montserrat font-black text-[12px] tracking-widest block uppercase">LLEGADA</span></div>' +
+        '<div class="col-span-4"><span class="text-[#94a3b8] font-montserrat font-black text-[13px] tracking-wide uppercase">' + esc(vd.destino) + '</span></div>' +
+        '<div class="col-span-2 text-center"><span class="text-[#64748b] font-montserrat font-black text-[15px]">' + esc(vd.llegada) + '</span></div>' +
+        '<div class="col-span-3"></div>' +
+        '</div></div></div>';
+    }).join('');
+
+    var equipajeItems = String(v.equipaje || '').split('\n').filter(Boolean).map(function (e) {
+      return '<div class="text-[13px] font-montserrat font-black text-[#334155] uppercase mb-0.5">' + esc(e) + '</div>';
+    }).join('');
+
+    var restriccionesDefault = 'NO REEMBOLSABLE\nNO TRANSFERIBLE\nPERMITE CAMBIO CON PENALIDAD + DIFERENCIA TARIFARIA (EN CASO DE QUE APLIQUE)';
+    var restriccionesItems = restriccionesDefault.split('\n').filter(Boolean).map(function (r) {
+      return '<div class="text-[13px] font-montserrat font-black text-[#334155] uppercase mb-0.5">• ' + esc(r) + '</div>';
+    }).join('');
+
+    var page1 = '' +
+      '<div id="page1" class="page-sheet page-a4 dynamic-height bg-white flex flex-col pt-10" style="padding-bottom: 0;">' +
+      '<div class="px-14 flex-1 flex flex-col">' +
+      '<div class="flex justify-between items-start mb-8 shrink-0">' +
+      '<div class="flex gap-4">' +
+      '<div class="w-[88px] h-[88px] bg-[#800080] rounded-[2rem] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden p-2">' +
+      '<img src="assets/img/Logo Holy.png" alt="Logo Holy" class="w-full h-full object-contain"></div>' +
+      '<div class="pt-1">' +
+      '<div class="text-[17px] tracking-wide mb-0.5 uppercase"><span class="text-[#800080]">COTIZACIÓN AÉREA/ </span><span class="font-montserrat font-black text-[#560B5B]">' + esc(v.pnr) + '</span></div>' +
+      '<div class="text-[13px] text-[#64748b] font-montserrat font-black tracking-widest mb-1.5">AEROLÍNEA: <span class="font-medium uppercase">' + esc(v.aerolinea) + '</span></div>' +
+      '<div class="flex items-center gap-1.5 text-[14px] text-[#475569] font-montserrat font-black tracking-widest mb-1.5">' +
+      'CONFIRMADO <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></div>' +
+      '<div class="text-[13px] font-montserrat font-black text-[#800080] tracking-wide uppercase">FECHA DE COTIZACIÓN: <span class="font-medium text-[#64748b]">' + esc(q.fechaCotizacion) + '</span></div>' +
+      '</div></div>' +
+      '<div class="pt-2"><img src="assets/img/ViajesHoly logo2.png" alt="Viajes Holy" class="h-12 w-auto object-contain"></div>' +
+      '</div>' +
+      '<div class="mb-4">' + vuelosHtml + '</div>' +
+      '<div class="mt-4 mb-8 shrink-0" style="page-break-inside: avoid;">' +
+      '<div class="flex items-center gap-3 mb-4">' +
+      '<div class="w-12 h-12 shrink-0 rounded-full border-2 border-[#800080] flex items-center justify-center bg-[#fdf5ff] overflow-hidden">' +
+      '<img src="assets/img/Boletos.png" alt="Boletos" class="w-8 h-8 object-contain"></div>' +
+      '<h3 class="text-[#800080] font-montserrat font-black text-[14px] tracking-wide uppercase">RESTRICCIONES / ' + esc(v.pnr) + '</h3>' +
+      '</div>' +
+      '<div class="pl-4 mb-6">' +
+      '<div class="text-[#64748b] font-montserrat font-black text-[13px] uppercase mb-3">TARIFA INCLUYE TODOS LOS IMPUESTOS Y TASAS</div>' +
+      '<div class="mb-3"><div class="text-[#64748b] font-montserrat font-black text-[13px] uppercase mb-1">FRANQUICIA DE EQUIPAJE</div>' + equipajeItems + '</div>' +
+      '<div><div class="text-[#64748b] font-montserrat font-black text-[13px] uppercase mb-1">RESTRICCIONES:</div>' + restriccionesItems + '</div>' +
+      '</div></div>' +
+      '<div class="mt-auto mb-8 shrink-0" style="page-break-inside: avoid;">' +
+      '<div class="pl-4 mb-2 text-[13px]">' +
+      '<span class="text-[#800080] font-montserrat font-black uppercase">ADULTOS</span> <span class="text-[#800080] font-montserrat font-black ml-1">' + pax.adultos + '</span>' +
+      '<span class="text-[#800080] font-montserrat font-black mx-2">-</span>' +
+      '<span class="text-[#800080] font-montserrat font-black uppercase">NIÑOS</span> <span class="text-[#800080] font-montserrat font-black ml-1">' + pax.ninos + '</span>' +
+      '<span class="text-[#800080] font-montserrat font-black mx-2">-</span>' +
+      '<span class="text-[#800080] font-montserrat font-black uppercase">INFANTES</span> <span class="text-[#800080] font-montserrat font-black ml-1">' + pax.infantes + '</span>' +
+      '</div>' +
+      '<div class="flex justify-between items-end mt-10 mb-2 px-4">' +
+      '<div class="w-40"><img src="assets/img/ViajesHoly logo2.png" alt="Viajes Holy" class="h-8 w-auto opacity-80 object-contain"></div>' +
+      '<div class="flex flex-col items-end gap-2 text-right">' +
+      '<div class="flex justify-between w-[300px] items-center pr-6">' +
+      '<span class="text-[#94a3b8] font-montserrat font-black text-[12px] uppercase tracking-wide">TARIFA POR ADULTO</span>' +
+      '<span class="text-[#64748b] font-montserrat font-black text-[14px]">' + money(tar.tarifaPorAdulto) + '</span></div>' +
+      '<div class="flex justify-between w-[300px] items-center mt-3 mb-2 pr-6">' +
+      '<span class="text-[#94a3b8] font-montserrat font-black text-[12px] uppercase tracking-wide">TARIFA POR NIÑO</span>' +
+      '<span class="text-[#64748b] font-montserrat font-black text-[14px]">' + money(tar.tarifaPorNino) + '</span></div>' +
+      '<div class="flex justify-between w-[330px] items-center mt-2">' +
+      '<span class="text-[#94a3b8] font-montserrat font-black text-[12px] uppercase tracking-wide pr-4">TOTAL ' + pax.adultos + ' ADT - ' + pax.ninos + ' CHD - ' + pax.infantes + ' INF</span>' +
+      '<div class="bg-[#800080] text-white px-7 py-3 rounded-xl shadow-md border-b-[4px] border-[#560B5B] min-w-[120px] text-center">' +
+      '<span class="font-montserrat font-black text-xl">' + money(tar.montoTotal) + '</span>' +
+      '</div></div></div></div></div></div>' +
+      '<div class="w-full bg-[#800080] rounded-t-[2.5rem] h-[30px] shrink-0"></div>' +
+      '</div>';
+
+    return { page1: page1, page2: '' };
   }
 
   // ---- PRESENTACIÓN DE PLANTILLA ----
@@ -301,6 +417,9 @@
   }
 
   function buildPreview(t, q) {
+    if (q && (q.tipoPaquete || '').toUpperCase() === 'SOLO VUELO') {
+      return renderSoloVueloPDF(t, q);
+    }
     return {
       page1: renderPage1(t, q),
       page2: renderPage2(t, q),
@@ -312,5 +431,6 @@
     buildTemplate: buildTemplate,
     renderPage1: renderPage1,
     renderPage2: renderPage2,
+    renderSoloVueloPDF: renderSoloVueloPDF,
   };
 })(typeof self !== 'undefined' ? self : this);

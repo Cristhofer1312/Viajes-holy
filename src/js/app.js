@@ -3,7 +3,6 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
-  var client = window.SupabaseClient;
   var Auth = window.Auth;
 
   function esc(s) {
@@ -428,33 +427,11 @@
       btnSave.disabled = true;
     }
 
-    // Convert data:image back to Blob to upload via api/imagen-upload
-    var token = Auth.usuario ? window.__supabaseSession.access_token : null;
-    var headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-
-    var imagePromises = nueva.imagenesBase64.map(function(img, i) {
-      if (img.startsWith('http')) return Promise.resolve(img);
-      if (!img.startsWith('data:image')) return Promise.resolve(img);
-      
-      var mime = img.split(',')[0].split(':')[1].split(';')[0];
-      var b64Data = img.split(',')[1];
-      var bin = atob(b64Data);
-      var arr = new Uint8Array(bin.length);
-      for(var j=0; j<bin.length; j++) arr[j] = bin.charCodeAt(j);
-      var blob = new Blob([arr], {type: mime});
-
-      return fetch('/api/imagen-upload', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ posadaId: nueva.id, contentType: mime })
-      }).then(r => r.json()).then(u => {
-        return fetch(u.signedUrl, {
-          method: 'PUT',
-          body: blob,
-          headers: { 'Content-Type': mime }
-        }).then(() => u.publicUrl);
-      });
+    // Las fotos nuevas (data:image) se suben al servidor; las ya subidas
+    // (/uploads/... o http) se conservan tal cual.
+    var imagePromises = nueva.imagenesBase64.map(function (img) {
+      if (typeof img !== 'string' || img.indexOf('data:image') !== 0) return Promise.resolve(img);
+      return Store.subirImagen(nueva.id, Store.dataUrlABlob(img));
     });
 
     Promise.all(imagePromises).then(function(urls) {
@@ -500,12 +477,8 @@
       if (!yes) return;
       // Borrado real en la BD (borra fotos de Storage e inclusiones por CASCADE).
       // Antes solo se quitaba del array local y reaparecía al recargar.
-      client.auth.getSession().then(function (res) {
-        var token = res.data && res.data.session ? res.data.session.access_token : null;
-        var headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-        return fetch('/api/plantillas-delete?id=' + encodeURIComponent(id), {
-          method: 'DELETE', headers: headers
-        });
+      fetch('/api/plantillas-delete?id=' + encodeURIComponent(id), {
+        method: 'DELETE', headers: Session.headers()
       }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (body) {
           if (!r.ok) throw new Error(body.error || ('HTTP ' + r.status));

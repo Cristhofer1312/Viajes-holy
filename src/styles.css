@@ -365,7 +365,14 @@ html.dark ::-webkit-scrollbar-thumb {
    El grosor lo define cada clase (font-black/font-extrabold); forzarlo aquí
    ensanchaba el texto distinto por equipo y rompía el A4 fijo. */
 .page-sheet, .page-sheet * { font-family: 'Montserrat', sans-serif !important; }
-.page-sheet { font-weight: 900; }
+/* Base Regular: como la cotización original, el peso fuerte se reserva a
+   títulos/etiquetas (black/extrabold/bold); los valores van en 400. */
+.page-sheet { font-weight: 400; }
+.page-sheet .font-normal    { font-weight: 400; }
+.page-sheet .font-medium    { font-weight: 500; }
+.page-sheet .font-bold      { font-weight: 700; }
+.page-sheet .font-extrabold { font-weight: 800; }
+.page-sheet .font-black     { font-weight: 900; }
 
 /* Fallback crítico: si el JIT de Tailwind no resolvió las clases inyectadas
    por preview.js en ese equipo, la grilla A4 sigue armada con CSS plano. */

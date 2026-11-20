@@ -1,55 +1,43 @@
 // netlify/functions/imagen-upload.js
-// POST /api/imagen-upload — genera una URL firmada para subir una foto al Storage
+// POST /api/imagen-upload — sube una foto de posada al disco del servidor
 // Requiere: template:update
+//
+// Petición: cuerpo binario de la imagen
+//   Content-Type: image/jpeg | image/png | image/webp
+//   X-Posada-Id:  <id de la posada>
+// Respuesta: { publicUrl: "/uploads/<posada>/<archivo>" }
+//
+// (Antes devolvía una URL firmada de Supabase Storage para un segundo PUT.)
 
-const { supabase } = require('./_lib/supabase');
-const { verificarAuth, puede, ok, error, handleOptions } = require('./_lib/auth');
+const uploads = require('./_lib/uploads');
+const { verificarAuth, puede, ok, error, handleOptions, fallo } = require('./_lib/auth');
 
-// Genera un ID único tipo ULID simplificado
-function uid() {
-  return Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 8).toUpperCase();
-}
+const MAX_BYTES = (Number(process.env.MAX_IMAGE_MB) || 15) * 1024 * 1024;
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
+  if (event.httpMethod !== 'POST') return error('Método no permitido', 405);
 
   try {
     const usuario = await verificarAuth(event);
     if (!puede(usuario, 'template:update')) return error('Sin permisos para subir imágenes', 403);
 
-    const body = JSON.parse(event.body || '{}');
-    const { posadaId, contentType } = body;
+    const posadaId = event.headers['x-posada-id'];
+    if (!posadaId) return error('Falta posadaId (header X-Posada-Id)', 400);
 
-    if (!posadaId) return error('Falta posadaId', 400);
+    const tipo = String(event.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+    if (!uploads.TIPOS[tipo]) return error('Tipo de archivo no permitido. Usar JPEG, PNG o WebP', 400);
 
-    // Validar tipo de archivo
-    const tiposPermitidos = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const tipo = contentType || 'image/jpeg';
-    if (!tiposPermitidos.includes(tipo)) return error('Tipo de archivo no permitido. Usar JPEG, PNG o WebP', 400);
+    const buffer = event.isBase64Encoded
+      ? Buffer.from(event.body || '', 'base64')
+      : Buffer.from(event.body || '', 'binary');
+    if (!buffer.length) return error('Imagen vacía', 400);
+    if (buffer.length > MAX_BYTES) return error('Imagen demasiado grande', 413);
 
-    const ext = tipo.split('/')[1].replace('jpeg', 'jpg');
-    const fileName = `${posadaId}/${uid()}.${ext}`;
-
-    // Crear URL firmada para subida directa desde el navegador
-    const { data, error: signErr } = await supabase.storage
-      .from('posadas-fotos')
-      .createSignedUploadUrl(fileName);
-
-    if (signErr) throw signErr;
-
-    // URL pública que tendrá la foto después de subida
-    const { data: publicData } = supabase.storage
-      .from('posadas-fotos')
-      .getPublicUrl(fileName);
-
-    return ok({
-      signedUrl:  data.signedUrl,   // URL para hacer PUT de la imagen (expira en 60s)
-      token:      data.token,
-      path:       fileName,
-      publicUrl:  publicData.publicUrl, // URL pública permanente para guardar en la BD
-    });
+    const publicUrl = await uploads.guardar(posadaId, buffer, tipo);
+    return ok({ publicUrl, path: publicUrl }, 201);
   } catch (err) {
-    console.error('[imagen-upload]', err.message);
-    return error(err.message, 500);
+    if (err.status === 400) return error(err.message, 400);
+    return fallo('imagen-upload', err);
   }
 };

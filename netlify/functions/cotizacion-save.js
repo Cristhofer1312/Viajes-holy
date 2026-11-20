@@ -2,8 +2,8 @@
 // POST /api/cotizacion-save — guarda una cotización al generar el PDF
 // Requiere: quote:create (cualquier usuario autenticado)
 
-const { supabase } = require('./_lib/supabase');
-const { verificarAuth, puede, ok, error, handleOptions } = require('./_lib/auth');
+const { query } = require('./_lib/db');
+const { verificarAuth, puede, ok, error, handleOptions, fallo } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
@@ -15,30 +15,34 @@ exports.handler = async (event) => {
     const cot = JSON.parse(event.body || '{}');
     if (!cot.idCotizacion) return error('Falta idCotizacion', 400);
 
-    const { error: dbErr } = await supabase
-      .from('cotizaciones')
-      .upsert({
-        id:                  cot.idCotizacion,
-        posada_id:           cot.plantillaId || null,
-        generado_por:        usuario.id,
-        estado:              cot.estado || 'CONFIRMADO',
-        tipo_paquete:        cot.tipoPaquete || null,
-        pasajeros_adultos:   cot.pasajeros ? cot.pasajeros.adultos : 0,
-        pasajeros_ninos:     cot.pasajeros ? cot.pasajeros.ninos : 0,
-        pasajeros_infantes:  cot.pasajeros ? cot.pasajeros.infantes : 0,
-        tarifa_adulto:       cot.tarifas ? cot.tarifas.tarifaPorAdulto : 0,
-        tarifa_nino:         cot.tarifas ? cot.tarifas.tarifaPorNino : 0,
-        moneda:              cot.tarifas ? cot.tarifas.moneda : 'USD',
-        monto_total:         cot.tarifas ? cot.tarifas.montoTotal : 0,
-        datos_vuelo:         cot.vuelo || null,
-        datos_hospedaje:     cot.hospedaje || null,
-        datos_cliente:       null, // para implementación futura
-      }, { onConflict: 'id' });
+    const pax = cot.pasajeros || {};
+    const tar = cot.tarifas || {};
+    await query(`
+      INSERT INTO cotizaciones (id, posada_id, generado_por, estado, tipo_paquete,
+        pasajeros_adultos, pasajeros_ninos, pasajeros_infantes,
+        tarifa_adulto, tarifa_nino, moneda, monto_total,
+        datos_vuelo, datos_hospedaje, datos_cliente)
+      VALUES ($1, (SELECT id FROM posadas WHERE id = $2), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NULL)
+      ON CONFLICT (id) DO UPDATE SET
+        posada_id = EXCLUDED.posada_id, generado_por = EXCLUDED.generado_por,
+        estado = EXCLUDED.estado, tipo_paquete = EXCLUDED.tipo_paquete,
+        pasajeros_adultos = EXCLUDED.pasajeros_adultos, pasajeros_ninos = EXCLUDED.pasajeros_ninos,
+        pasajeros_infantes = EXCLUDED.pasajeros_infantes, tarifa_adulto = EXCLUDED.tarifa_adulto,
+        tarifa_nino = EXCLUDED.tarifa_nino, moneda = EXCLUDED.moneda,
+        monto_total = EXCLUDED.monto_total, datos_vuelo = EXCLUDED.datos_vuelo,
+        datos_hospedaje = EXCLUDED.datos_hospedaje`,
+      [
+        cot.idCotizacion, cot.plantillaId || null, usuario.id,
+        cot.estado || 'CONFIRMADO', cot.tipoPaquete || null,
+        Number(pax.adultos) || 0, Number(pax.ninos) || 0, Number(pax.infantes) || 0,
+        Number(tar.tarifaPorAdulto) || 0, Number(tar.tarifaPorNino) || 0,
+        tar.moneda || 'USD', Number(tar.montoTotal) || 0,
+        cot.vuelo ? JSON.stringify(cot.vuelo) : null,
+        cot.hospedaje ? JSON.stringify(cot.hospedaje) : null,
+      ]);
 
-    if (dbErr) throw dbErr;
     return ok({ success: true, id: cot.idCotizacion });
   } catch (err) {
-    console.error('[cotizacion-save]', err.message);
-    return error(err.message, 500);
+    return fallo('cotizacion-save', err);
   }
 };

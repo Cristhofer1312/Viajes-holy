@@ -5,22 +5,13 @@
 // sin ningún administrador:
 //   1. noPropio  — un admin no puede eliminarse a sí mismo
 //   2. último admin — no se puede eliminar al único admin activo restante
+//
+// Las cotizaciones y usuarios que creó quedan con generado_por/creado_por = NULL.
 
-const { supabase } = require('./_lib/supabase');
-const { verificarAuth, puede, ok, error, handleOptions } = require('./_lib/auth');
-
-// Cuenta los admins activos que quedarían si se eliminara `idExcluido`
-async function adminsActivosRestantes(idExcluido) {
-  const { count, error: countErr } = await supabase
-    .from('usuarios')
-    .select('id', { count: 'exact', head: true })
-    .eq('rol', 'admin')
-    .eq('activo', true)
-    .neq('id', idExcluido);
-
-  if (countErr) throw countErr;
-  return count || 0;
-}
+const { query } = require('./_lib/db');
+const {
+  verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo, adminsActivosRestantes,
+} = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
@@ -30,13 +21,8 @@ exports.handler = async (event) => {
     const id = event.queryStringParameters && event.queryStringParameters.id;
     if (!id) return error('Falta el parámetro id', 400);
 
-    const { data: objetivo, error: getErr } = await supabase
-      .from('usuarios')
-      .select('id, rol, activo')
-      .eq('id', id)
-      .single();
-
-    if (getErr || !objetivo) return error('Usuario no encontrado', 404);
+    const objetivo = await buscarObjetivo(id);
+    if (!objetivo) return error('Usuario no encontrado', 404);
 
     if (!puede(actor, 'user:delete', objetivo)) {
       return error('Sin permisos para eliminar este usuario', 403);
@@ -44,21 +30,14 @@ exports.handler = async (event) => {
 
     // Guarda: nunca dejar el sistema sin admins
     if (objetivo.rol === 'admin' && objetivo.activo) {
-      const restantes = await adminsActivosRestantes(id);
-      if (restantes === 0) {
+      if ((await adminsActivosRestantes(id)) === 0) {
         return error('No se puede eliminar al único administrador activo', 409);
       }
     }
 
-    // Eliminar de auth.users (CASCADE borra el perfil en tabla usuarios)
-    const { error: authErr } = await supabase.auth.admin.deleteUser(id);
-    if (authErr) throw authErr;
-
+    await query('DELETE FROM usuarios WHERE id = $1', [id]);
     return ok({ success: true, id });
   } catch (err) {
-    console.error('[usuarios-delete]', err.message);
-    var msg = String(err.message || '');
-    var status = /Sin autorización|Token inválido|no registrado|inactivo/i.test(msg) ? 401 : 500;
-    return error(err.message, status);
+    return fallo('usuarios-delete', err);
   }
 };

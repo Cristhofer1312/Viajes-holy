@@ -9,6 +9,7 @@ exports.handler = async (event) => {
     const usuario = await verificarAuth(event);
     return ok({
       id:        usuario.id,
+      email:     usuario.email,
       nombre:    usuario.nombre,
       rol:       usuario.rol,
       activo:    usuario.activo,

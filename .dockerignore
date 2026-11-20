@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+node_modules
+uploads
+.netlify
+test
+plantillas
+deploy
+*.md
+*.pdf
+deno.lock
+netlify.toml
+Dockerfile
+docker-compose.yml
+scripts/backup.sh

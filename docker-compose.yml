@@ -1,0 +1,63 @@
+# Viajes Holy en el VPS: app Node + Postgres.
+#
+# - app: solo escucha en 127.0.0.1:8090; nginx del host hace de proxy HTTPS
+#   (ver deploy/nginx-viajes-holy.conf).
+# - db:  Postgres 16 sin puerto publicado (solo accesible desde la red de
+#   compose). El esquema se crea solo la primera vez (db/schema.sql).
+#
+#   docker compose up -d --build                      # construir y arrancar
+#   docker compose logs -f app                        # ver logs
+#   docker compose exec app node scripts/create-admin.js
+#   docker compose exec db psql -U holy -d holy       # consola SQL
+#
+# Volúmenes con datos (¡respaldar! ver scripts/backup.sh):
+#   holy-pgdata   → base de datos
+#   holy-uploads  → fotos de las posadas
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: viajes-holy-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: holy
+      POSTGRES_USER: holy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U holy -d holy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  app:
+    build: .
+    image: viajes-holy:latest
+    container_name: viajes-holy
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 8888
+      UPLOADS_DIR: /data/uploads
+      DATABASE_URL: postgres://holy:${POSTGRES_PASSWORD}@db:5432/holy
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "127.0.0.1:8090:8888"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  pgdata:
+    name: holy-pgdata
+  uploads:
+    name: holy-uploads

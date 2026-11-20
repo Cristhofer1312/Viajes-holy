@@ -1,90 +1,84 @@
 // netlify/functions/plantillas-save.js
-// POST /api/plantillas — guarda (upsert) una plantilla individual
+// POST /api/plantillas-save — guarda (upsert) una plantilla individual
 // Requiere: template:create o template:update
+//
+// Posada, inclusiones y fotos se escriben en UNA transacción: si algo falla
+// no queda la posada a medias (antes podía quedar sin inclusiones).
 
-const { supabase } = require('./_lib/supabase');
-const { verificarAuth, puede, ok, error, handleOptions } = require('./_lib/auth');
+const { query, tx } = require('./_lib/db');
+const uploads = require('./_lib/uploads');
+const { verificarAuth, puede, ok, error, handleOptions, fallo } = require('./_lib/auth');
+
+// Fotos válidas: las servidas por /uploads/ (o URLs http(s) heredadas)
+function esUrlFoto(u) {
+  return typeof u === 'string' && (u.startsWith(uploads.URL_PREFIX) || /^https?:\/\//.test(u));
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
 
   try {
-    // Autenticación y autorización
     const usuario = await verificarAuth(event);
 
     const plantilla = JSON.parse(event.body || '{}');
     if (!plantilla.id || !plantilla.nombrePosada || !plantilla.destino) {
       return error('Faltan campos requeridos: id, nombrePosada, destino', 400);
     }
+    if (!uploads.carpetaSegura(plantilla.id)) return error('id de plantilla inválido', 400);
 
     // El permiso depende de si la posada ya existe: crear o actualizar
-    const { data: existente, error: existeErr } = await supabase
-      .from('posadas')
-      .select('id')
-      .eq('id', plantilla.id)
-      .maybeSingle();
-
-    if (existeErr) throw existeErr;
-
-    if (existente) {
-      if (!puede(usuario, 'template:update')) {
-        return error('Sin permisos para actualizar plantillas', 403);
-      }
-    } else {
-      if (!puede(usuario, 'template:create')) {
-        return error('Sin permisos para crear plantillas', 403);
-      }
+    const { rows: existe } = await query('SELECT 1 FROM posadas WHERE id = $1', [plantilla.id]);
+    const accion = existe.length ? 'template:update' : 'template:create';
+    if (!puede(usuario, accion)) {
+      return error(existe.length ? 'Sin permisos para actualizar plantillas' : 'Sin permisos para crear plantillas', 403);
     }
 
-    // Upsert de la posada (inserta o actualiza si ya existe)
-    const { error: upsertErr } = await supabase
-      .from('posadas')
-      .upsert({
-        id:                    plantilla.id,
-        nombre:                plantilla.nombrePosada,
-        destino:               plantilla.destino,
-        tipo_servicio_default: plantilla.tipoServicioDefault || '',
-        layout_fotos:          plantilla.layoutFotos || 1,
-        checkin_hora:          plantilla.checkInHora  || '15:00',
-        checkout_hora:         plantilla.checkOutHora || '13:00',
-        tipo_template:         plantilla.tipoTemplate || 'COMPLETO',
-        activa:                true,
-      }, { onConflict: 'id' });
+    const urls = Array.isArray(plantilla.imagenesBase64) ? plantilla.imagenesBase64.filter(esUrlFoto) : null;
+    let fotosQuitadas = [];
 
-    if (upsertErr) throw upsertErr;
+    await tx(async (c) => {
+      await c.query(`
+        INSERT INTO posadas (id, nombre, destino, tipo_servicio_default, layout_fotos,
+                             checkin_hora, checkout_hora, tipo_template, activa)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+        ON CONFLICT (id) DO UPDATE SET
+          nombre = EXCLUDED.nombre, destino = EXCLUDED.destino,
+          tipo_servicio_default = EXCLUDED.tipo_servicio_default,
+          layout_fotos = EXCLUDED.layout_fotos, checkin_hora = EXCLUDED.checkin_hora,
+          checkout_hora = EXCLUDED.checkout_hora, tipo_template = EXCLUDED.tipo_template,
+          activa = true`,
+        [
+          plantilla.id, plantilla.nombrePosada, plantilla.destino,
+          plantilla.tipoServicioDefault || '', Number(plantilla.layoutFotos) || 1,
+          plantilla.checkInHora || '15:00', plantilla.checkOutHora || '13:00',
+          plantilla.tipoTemplate || 'COMPLETO',
+        ]);
 
-    // Reemplazar inclusiones: borrar las actuales e insertar las nuevas
-    await supabase.from('posada_inclusiones').delete().eq('posada_id', plantilla.id);
-    if (Array.isArray(plantilla.inclusiones) && plantilla.inclusiones.length) {
-      const inclRows = plantilla.inclusiones.map((texto, i) => ({
-        posada_id: plantilla.id,
-        texto,
-        orden: i,
-      }));
-      const { error: inclErr } = await supabase.from('posada_inclusiones').insert(inclRows);
-      if (inclErr) throw inclErr;
-    }
-
-    // Las fotos se manejan por separado con /api/imagen-upload
-    // Si vienen URLs en imagenesBase64[], sincronizarlas también
-    if (Array.isArray(plantilla.imagenesBase64) && plantilla.imagenesBase64.length) {
-      // Solo procesar URLs válidas (no Base64 raw)
-      const urls = plantilla.imagenesBase64.filter(u => u && u.startsWith('http'));
-      if (urls.length) {
-        await supabase.from('posada_fotos').delete().eq('posada_id', plantilla.id);
-        const fotoRows = urls.map((url, i) => ({
-          posada_id:  plantilla.id,
-          url,
-          orden:      i,
-          es_portada: i === 0,
-        }));
-        await supabase.from('posada_fotos').insert(fotoRows);
+      // Reemplazar inclusiones
+      await c.query('DELETE FROM posada_inclusiones WHERE posada_id = $1', [plantilla.id]);
+      const incl = Array.isArray(plantilla.inclusiones) ? plantilla.inclusiones : [];
+      for (let i = 0; i < incl.length; i++) {
+        await c.query('INSERT INTO posada_inclusiones (posada_id, texto, orden) VALUES ($1, $2, $3)',
+          [plantilla.id, String(incl[i]), i]);
       }
-    }
+
+      // Sincronizar fotos (solo si vienen URLs; las fotos se suben antes con /api/imagen-upload)
+      if (urls && urls.length) {
+        const { rows: previas } = await c.query('SELECT url FROM posada_fotos WHERE posada_id = $1', [plantilla.id]);
+        fotosQuitadas = previas.map(r => r.url).filter(u => !urls.includes(u));
+        await c.query('DELETE FROM posada_fotos WHERE posada_id = $1', [plantilla.id]);
+        for (let i = 0; i < urls.length; i++) {
+          await c.query('INSERT INTO posada_fotos (posada_id, url, orden, es_portada) VALUES ($1, $2, $3, $4)',
+            [plantilla.id, urls[i], i, i === 0]);
+        }
+      }
+    });
+
+    // Fuera de la transacción: borrar del disco las fotos que se quitaron
+    await uploads.borrarUrls(fotosQuitadas).catch(e => console.warn('[plantillas-save] limpieza:', e.message));
 
     return ok({ success: true, id: plantilla.id });
   } catch (err) {
-    console.error('[plantillas-save]', err.message);
-    return error(err.message, 500);
+    return fallo('plantillas-save', err);
   }
 };

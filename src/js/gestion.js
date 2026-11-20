@@ -9,7 +9,6 @@
 (function () {
   'use strict';
 
-  var client = window.SupabaseClient;
   var Auth = window.Auth;
 
   var archivosFotos = [];
@@ -19,12 +18,7 @@
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   function apiHeaders(extra) {
-    return client.auth.getSession().then(function (res) {
-      var t = res.data && res.data.session ? res.data.session.access_token : null;
-      var h = extra || {};
-      if (t) h['Authorization'] = 'Bearer ' + t;
-      return h;
-    });
+    return Promise.resolve(window.Session.headers(extra));
   }
 
   function getJSON(url) {
@@ -262,17 +256,10 @@
         var posadaId = generarUUID();
         var imagenes = [];
 
-        // 1. Subir fotos al Storage y recolectar URLs
+        // 1. Subir fotos al servidor y recolectar URLs
         return archivosFotos.reduce(function (chain, file) {
           return chain.then(function () {
-            return fetch('/api/imagen-upload', {
-              method: 'POST', headers: headers,
-              body: JSON.stringify({ posadaId: posadaId, contentType: file.type })
-            }).then(function (r) { return r.json(); }).then(function (u) {
-              return fetch(u.signedUrl, {
-                method: 'PUT', body: file, headers: { 'Content-Type': file.type }
-              }).then(function () { imagenes.push(u.publicUrl); });
-            });
+            return Store.subirImagen(posadaId, file).then(function (url) { imagenes.push(url); });
           });
         }, Promise.resolve()).then(function () {
           // 2. Guardar la posada

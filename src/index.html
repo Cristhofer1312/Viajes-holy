@@ -33,7 +33,7 @@
         }
     </script>
     <link rel="stylesheet" href="assets/css/fonts.css?v=4">
-    <link rel="stylesheet" href="styles.css?v=9">
+    <link rel="stylesheet" href="styles.css?v=10">
 </head>
 
 <body class="h-screen h-dvh min-h-screen overflow-hidden overflow-x-clip flex flex-col dark:bg-[#0f0f0f] dark:text-white">
@@ -58,8 +58,15 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Contraseña</label>
-                    <input type="password" id="login-pass" required
-                        class="w-full border-2 border-gray-200 dark:border-[#333333] bg-transparent dark:bg-[#2a2a2a] rounded-xl p-3 text-gray-900 dark:text-white focus:border-holyPurple outline-none transition font-medium">
+                    <div class="relative">
+                        <input type="password" id="login-pass" required autocomplete="current-password"
+                            class="w-full border-2 border-gray-200 dark:border-[#333333] bg-transparent dark:bg-[#2a2a2a] rounded-xl p-3 pr-12 text-gray-900 dark:text-white focus:border-holyPurple outline-none transition font-medium">
+                        <button type="button" id="login-pass-toggle" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-holyPurple focus:text-holyPurple outline-none transition">
+                            <svg id="login-pass-eye" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            <svg id="login-pass-eye-off" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" id="login-btn"
                     class="w-full bg-holyPurple text-white font-bold py-3.5 rounded-xl hover:bg-holyPurpleDark transition shadow-lg shadow-holyPurple/30">
@@ -968,22 +975,20 @@
 
     <div id="toast" class="toast"></div>
 
-    <!-- SDK de Supabase (necesario antes de supabase-client.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="js/supabase-client.js?v=5"></script>
+    <script src="js/session.js?v=1"></script>
     <script src="js/roles.js?v=1"></script>
-    <script src="js/auth.js?v=1"></script>
+    <script src="js/auth.js?v=3"></script>
     <script src="js/quoteModel.js?v=4"></script>
     <script src="js/templateModel.js?v=4"></script>
     <script src="js/exporter.js?v=4"></script>
     <script src="js/imagedb.js?v=4"></script>
-    <script src="js/storage.js?v=5"></script>
-    <script src="js/preview.js?v=7"></script>
+    <script src="js/storage.js?v=6"></script>
+    <script src="js/preview.js?v=9"></script>
     <script src="js/pdfManager.js?v=7"></script>
-    <script src="js/userService.js?v=1"></script>
-    <script src="js/gestion.js?v=2"></script>
+    <script src="js/userService.js?v=2"></script>
+    <script src="js/gestion.js?v=3"></script>
     <script src="js/flightParser.js?v=1"></script>
-    <script src="js/app.js?v=9"></script>
+    <script src="js/app.js?v=10"></script>
 
 </body>
 

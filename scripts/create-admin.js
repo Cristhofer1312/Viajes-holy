@@ -1,147 +1,84 @@
 // scripts/create-admin.js
-// Crea (o repara) el usuario administrador maestro.
+// Crea (o repara) el usuario administrador maestro en Postgres.
 //
-// Ejecutar con: node scripts/create-admin.js
+// Ejecutar en el VPS:   docker compose exec app node scripts/create-admin.js
+// o en local:           node scripts/create-admin.js
 //
-// Las credenciales se leen del .env — NUNCA están en este archivo:
+// Las credenciales se leen del entorno / .env — NUNCA están en este archivo:
 //   ADMIN_EMAIL      (obligatorio)
 //   ADMIN_PASSWORD   (obligatorio, mínimo 8 caracteres)
 //   ADMIN_NOMBRE     (opcional, por defecto "Administrador Holy")
+//   DATABASE_URL     (obligatorio)
 //
-// El script es idempotente: se puede re-ejecutar para rotar la contraseña
-// del admin o para reparar un alta a medias. Es el ÚNICO camino para crear
-// otro administrador, porque la aplicación tiene prohibido crearlos
-// (regla `asigna` en src/js/roles.js).
+// Idempotente: re-ejecutarlo rota la contraseña del admin, lo reactiva y
+// cierra sus sesiones abiertas. Es el ÚNICO camino para crear otro
+// administrador, porque la aplicación tiene prohibido crearlos (regla
+// `asigna` en src/js/roles.js).
 
 'use strict';
 
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const { pool, query } = require('../netlify/functions/_lib/db');
+const { hashPassword } = require('../netlify/functions/_lib/token');
 
 const MIN_PASSWORD = 8;
 
-// ─── Validación de entrada ──────────────────────────────────────────────────
-
 function leerConfig() {
-  const faltantes = ['ADMIN_EMAIL', 'ADMIN_PASSWORD']
-    .filter((k) => !process.env[k]);
-
+  const faltantes = ['ADMIN_EMAIL', 'ADMIN_PASSWORD', 'DATABASE_URL'].filter((k) => !process.env[k]);
   if (faltantes.length) {
-    console.error('\n❌ Faltan variables de entorno en .env:\n');
+    console.error('\n❌ Faltan variables de entorno:\n');
     faltantes.forEach((k) => console.error(`   ${k}`));
-    console.error('\n   Agrégalas al archivo .env de la raíz y vuelve a ejecutar.');
-    console.error('   Ver .env.example para el formato.\n');
+    console.error('\n   Agrégalas al .env (ver .env.example) o pásalas con -e.\n');
     process.exit(1);
   }
-
   const password = process.env.ADMIN_PASSWORD;
   if (password.length < MIN_PASSWORD) {
     console.error(`\n❌ ADMIN_PASSWORD debe tener al menos ${MIN_PASSWORD} caracteres.\n`);
     process.exit(1);
   }
-
   return {
-    email:    process.env.ADMIN_EMAIL.trim(),
+    email:  process.env.ADMIN_EMAIL.trim().toLowerCase(),
     password,
-    nombre:   process.env.ADMIN_NOMBRE || 'Administrador Holy',
+    nombre: process.env.ADMIN_NOMBRE || 'Administrador Holy',
   };
 }
 
-// ─── Utilidades ─────────────────────────────────────────────────────────────
-
-/** Busca un usuario en Supabase Auth por email. La admin API no filtra por email. */
-async function buscarEnAuth(email) {
-  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (error) throw error;
-  return (data.users || []).find((u) => (u.email || '').toLowerCase() === email.toLowerCase()) || null;
-}
-
-/**
- * Garantiza que exista el perfil en la tabla `usuarios`.
- * No sobrescribe `nombre` ni `rol` si la fila ya existe: pueden haber sido
- * modificados a mano desde el panel de Supabase.
- */
-async function asegurarPerfil(userId, nombre) {
-  const { data: existente, error: selErr } = await supabase
-    .from('usuarios')
-    .select('id, nombre, rol, activo')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (selErr) throw selErr;
-
-  if (existente) {
-    if (existente.activo) {
-      console.log(`   ✅ Perfil existente ("${existente.nombre}" · ${existente.rol}) — sin cambios`);
-    } else {
-      const { error: actErr } = await supabase
-        .from('usuarios')
-        .update({ activo: true })
-        .eq('id', userId);
-      if (actErr) throw actErr;
-      console.log('   ♻️  Perfil reactivado (estaba inactivo)');
-    }
-    return;
-  }
-
-  const { error: insErr } = await supabase.from('usuarios').insert({
-    id:     userId,
-    nombre,
-    rol:    'admin',
-    activo: true,
-  });
-  if (insErr) throw insErr;
-  console.log(`   ✅ Perfil creado ("${nombre}" · admin · activo)`);
-}
-
-// ─── Flujo principal ────────────────────────────────────────────────────────
-
 async function createAdmin() {
   const { email, password, nombre } = leerConfig();
-
   console.log(`\n🔐 Administrador: ${email}`);
 
-  // 1. Usuario en Supabase Auth (crear o rotar la contraseña)
-  const existente = await buscarEnAuth(email);
-  let userId;
+  const hash = await hashPassword(password);
+  const { rows: existentes } = await query(
+    'SELECT id, nombre, rol, activo FROM usuarios WHERE lower(email) = $1', [email]
+  );
 
-  if (existente) {
-    const { error } = await supabase.auth.admin.updateUserById(existente.id, {
-      password,
-      email_confirm: true,
-    });
-    if (error) throw error;
-
-    userId = existente.id;
-    console.log('   ♻️  El usuario ya existía: contraseña actualizada y email confirmado');
+  if (existentes.length) {
+    const u = existentes[0];
+    // No se cambia nombre ni rol: pueden haberse editado a mano
+    await query(
+      `UPDATE usuarios SET password_hash = $2, activo = true, sesion_version = sesion_version + 1
+        WHERE id = $1`,
+      [u.id, hash]
+    );
+    console.log(`   ♻️  Ya existía ("${u.nombre}" · ${u.rol}): contraseña actualizada${u.activo ? '' : ' y reactivado'}`);
+    if (u.rol !== 'admin') {
+      console.log(`   ⚠️  Su rol es "${u.rol}", no admin. Cámbialo con:`);
+      console.log(`      UPDATE usuarios SET rol = 'admin' WHERE lower(email) = '${email}';`);
+    }
   } else {
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // sin requisito de confirmar por correo
-    });
-    if (error) throw error;
-
-    userId = data.user.id;
-    console.log('   ✅ Usuario creado en Supabase Auth');
+    await query(
+      `INSERT INTO usuarios (email, password_hash, nombre, rol, activo) VALUES ($1, $2, $3, 'admin', true)`,
+      [email, hash, nombre]
+    );
+    console.log(`   ✅ Creado ("${nombre}" · admin · activo)`);
   }
 
-  // 2. Perfil con rol en la tabla `usuarios`
-  await asegurarPerfil(userId, nombre);
-
-  console.log('\n✅ Administrador listo.');
-  console.log('────────────────────────────────────────');
-  console.log(`   Email:      ${email}`);
-  console.log(`   Contraseña: ${'*'.repeat(12)}  (definida en ADMIN_PASSWORD)`);
-  console.log('────────────────────────────────────────\n');
+  console.log('\n✅ Administrador listo.\n');
 }
 
-createAdmin().catch(function (err) {
-  console.error('\n❌ Error en create-admin:', err.message);
-  process.exit(1);
-});
+createAdmin()
+  .catch(function (err) {
+    console.error('\n❌ Error en create-admin:', err.message);
+    process.exitCode = 1;
+  })
+  .finally(function () { return pool.end(); });

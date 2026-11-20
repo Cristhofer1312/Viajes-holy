@@ -43,7 +43,7 @@ test('UserService existe y expone la API normal', () => {
 
 test('usuarios-list devuelve email (contrato aditivo retrocompatible)', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'netlify', 'functions', 'usuarios-list.js'), 'utf8');
-  assert.ok(src.includes('emailPorId') || src.includes('listUsers'), 'debe enriquecer con email desde Auth');
+  assert.ok(/u\.email/.test(src), 'debe devolver el email desde la tabla usuarios');
   assert.ok(src.includes('creado_por_nombre') || src.includes('email'), 'debe añadir email sin quitar campos');
 });
 
@@ -52,6 +52,7 @@ test('existe function usuarios-reset-password con guardas', () => {
   assert.ok(fs.existsSync(file));
   const src = fs.readFileSync(file, 'utf8');
   assert.ok(src.includes("user:update"), 'reutiliza user:update para no cambiar roles.js');
-  assert.ok(src.includes('updateUserById'), 'usa auth.admin.updateUserById');
+  assert.ok(src.includes('hashPassword'), 'guarda la contraseña con bcrypt');
+  assert.ok(src.includes('sesion_version + 1'), 'invalida las sesiones abiertas del usuario');
   assert.ok(src.includes('al menos 8'), 'valida longitud mínima');
 });

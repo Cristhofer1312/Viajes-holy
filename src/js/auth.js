@@ -10,7 +10,7 @@
 (function (root) {
   'use strict';
 
-  var client = root.SupabaseClient;
+  var Session = root.Session;
   var Roles = root.Roles;
 
   var usuario = null;          // { id, nombre, rol, activo, rango }
@@ -61,14 +61,20 @@
     return new Promise(function (resolve) { readyResolvers.push(resolve); });
   }
 
-  /** Carga el perfil del usuario autenticado desde /api/me (fuente de verdad). */
+  /**
+   * Carga el perfil del usuario autenticado desde /api/me (fuente de verdad).
+   * Token vencido o revocado (401) → null: se pide login de nuevo sin alarma.
+   */
   async function cargarPerfil() {
-    var res = await client.auth.getSession();
-    if (!res.data || !res.data.session) return null;
+    if (!Session.token()) return null;
 
-    var r = await fetch('/api/me', {
-      headers: { 'Authorization': 'Bearer ' + res.data.session.access_token }
-    });
+    var r = await fetch('/api/me', { headers: Session.headers() });
+    if (r.status === 401) {
+      var body = await r.json().catch(function () { return {}; });
+      Session.logout();
+      if (/inactivo/i.test(body.error || '')) throw new Error('Usuario inactivo');
+      return null;
+    }
     if (!r.ok) throw new Error('No se pudo verificar el perfil');
 
     var perfil = await r.json();
@@ -82,8 +88,7 @@
    */
   async function restaurarSesion() {
     try {
-      var res = await client.auth.getSession();
-      if (!res.data || !res.data.session) {
+      if (!Session.token()) {
         usuario = null;
         mostrarOverlay();
         marcarListo();
@@ -107,7 +112,7 @@
       console.error('[auth] Error restaurando sesión:', err.message);
       usuario = null;
       // Sesión inválida, inactiva o no registrada: cerrar y bloquear
-      await client.auth.signOut();
+      Session.logout();
       mostrarOverlay();
       mostrarError('Acceso denegado. Contacte al administrador.');
       marcarListo();
@@ -118,9 +123,13 @@
   /** Inicia sesión. Devuelve true si el usuario queda autenticado y perfilado. */
   async function login(email, pass) {
     ocultarError();
-    var { error } = await client.auth.signInWithPassword({ email: email, password: pass });
-    if (error) {
-      mostrarError('Credenciales inválidas.');
+    try {
+      await Session.login(email, pass);
+    } catch (err) {
+      if (err.status === 403) mostrarError('Usuario inactivo. Contacte al administrador.');
+      else if (err.status === 429) mostrarError('Demasiados intentos. Espera unos minutos.');
+      else if (err.status === 401) mostrarError('Credenciales inválidas.');
+      else mostrarError('No se pudo conectar con el servidor.');
       return false;
     }
     var perfil = await restaurarSesion();
@@ -136,7 +145,7 @@
 
   /** Cierra sesión y devuelve al overlay de login. */
   async function logout() {
-    await client.auth.signOut();
+    Session.logout();
     usuario = null;
     listo = false;
     window.location.reload();
@@ -147,30 +156,42 @@
     return Roles.puede(usuario, accion, objetivo);
   }
 
-  /** Cambia la contraseña propia (sin pasar por Functions). */
+  /** Cambia la contraseña propia (cierra las demás sesiones de este usuario). */
   async function cambiarMiPassword(newPass) {
     if (typeof newPass !== 'string' || newPass.length < 8) {
       throw new Error('La nueva contraseña debe tener al menos 8 caracteres');
     }
-    var { error } = await client.auth.updateUser({ password: newPass });
-    if (error) throw new Error(error.message);
+    await Session.cambiarPassword(newPass);
     return true;
   }
 
-  /** Envía correo de recuperación (requiere SMTP configurado en Supabase). */
-  async function solicitarRecuperacion(email) {
-    var { error } = await client.auth.resetPasswordForEmail(
-      String(email || '').trim().toLowerCase()
-    );
-    if (error) throw new Error(error.message);
-    return true;
-  }
+  // No hay recuperación por correo: un administrador restablece la
+  // contraseña desde Usuarios (/api/usuarios-reset-password).
 
   // ─── Arranque ──────────────────────────────────────────────────────────────
+
+  /** Botón de ojo: alterna la contraseña entre visible y oculta. */
+  function bindMostrarPassword() {
+    var btn = $('login-pass-toggle');
+    var input = $('login-pass');
+    if (!btn || !input) return;
+    btn.addEventListener('click', function () {
+      var mostrar = input.type === 'password';
+      input.type = mostrar ? 'text' : 'password';
+      var etiqueta = mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña';
+      btn.setAttribute('aria-label', etiqueta);
+      btn.setAttribute('title', etiqueta);
+      btn.setAttribute('aria-pressed', mostrar ? 'true' : 'false');
+      $('login-pass-eye').classList.toggle('hidden', mostrar);
+      $('login-pass-eye-off').classList.toggle('hidden', !mostrar);
+      input.focus();
+    });
+  }
 
   function bindLogin() {
     var form = $('login-form');
     if (!form) return;
+    bindMostrarPassword();
 
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -195,10 +216,10 @@
     if (btn) btn.addEventListener('click', logout);
   }
 
-  // supabase-client.js dispara holy:auth-change en cada cambio de sesión
-  document.addEventListener('holy:auth-change', function (ev) {
-    if (!ev.detail || !ev.detail.session) {
-      // Se cerró la sesión en otra pestaña: bloquear
+  // Session avisa cuando el token cambia (también desde otras pestañas)
+  if (Session) Session.onChange(function (token) {
+    if (!token && usuario) {
+      // Se cerró la sesión (aquí o en otra pestaña): bloquear
       usuario = null;
       listo = false;
       mostrarOverlay();
@@ -206,8 +227,8 @@
     }
   });
 
-  if (!client) {
-    console.error('[auth] SupabaseClient no disponible.');
+  if (!Session) {
+    console.error('[auth] Session no disponible (falta js/session.js).');
     marcarListo();
   } else {
     bindLogin();
@@ -222,7 +243,6 @@
     restaurarSesion: restaurarSesion,
     puede: puede,
     cambiarMiPassword: cambiarMiPassword,
-    solicitarRecuperacion: solicitarRecuperacion,
     get usuario() { return usuario; },
   };
 

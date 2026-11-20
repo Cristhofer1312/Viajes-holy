@@ -3,15 +3,11 @@
 //
 // Requiere: user:create (solo Admin) y que el rol solicitado esté en la lista
 // `asigna` de la regla (encargado | agente). Nadie crea otro admin desde la
-// aplicación: un segundo admin se añade directamente en el panel de Supabase.
+// aplicación: un admin se añade con scripts/create-admin.js.
 
-const { supabase } = require('./_lib/supabase');
-const { verificarAuth, puede, ok, error, handleOptions } = require('./_lib/auth');
-
-// Errores de autenticación → 401 (no enmascarar como 500)
-function esAuthError(msg) {
-  return /Sin autorización|Token inválido|no registrado|inactivo/i.test(String(msg || ''));
-}
+const { query } = require('./_lib/db');
+const token = require('./_lib/token');
+const { verificarAuth, puede, ok, error, handleOptions, fallo } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
@@ -39,35 +35,19 @@ exports.handler = async (event) => {
       return error('Sin permisos para crear un usuario con ese rol', 403);
     }
 
-    // 1. Crear la cuenta en Supabase Auth, ya confirmada (alta inmediata)
-    const { data: authData, error: authErr } = await supabase.auth.admin.createUser({
-      email,
-      password: pass,
-      email_confirm: true,
-    });
-    if (authErr) {
-      if (/already/i.test(authErr.message)) return error('Ese email ya está registrado', 409);
-      throw authErr;
+    const hash = await token.hashPassword(pass);
+    try {
+      const { rows } = await query(
+        `INSERT INTO usuarios (email, password_hash, nombre, rol, activo, creado_por)
+         VALUES ($1, $2, $3, $4, true, $5) RETURNING id`,
+        [email, hash, nombre, rol, actor.id]
+      );
+      return ok({ success: true, id: rows[0].id, email, nombre, rol, activo: true }, 201);
+    } catch (e) {
+      if (e.code === '23505') return error('Ese email ya está registrado', 409); // unique_violation
+      throw e;
     }
-
-    // 2. Insertar el perfil activo en la tabla usuarios
-    const { error: perfilErr } = await supabase.from('usuarios').insert({
-      id:         authData.user.id,
-      nombre,
-      rol,
-      activo:     true,
-      creado_por: actor.id,
-    });
-
-    if (perfilErr) {
-      // No dejar una cuenta huérfana en auth sin perfil en la tabla usuarios
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw perfilErr;
-    }
-
-    return ok({ success: true, id: authData.user.id, email, nombre, rol, activo: true }, 201);
   } catch (err) {
-    console.error('[usuarios-save]', err.message);
-    return error(err.message, esAuthError(err.message) ? 401 : 500);
+    return fallo('usuarios-save', err);
   }
 };

@@ -5,15 +5,8 @@
 (function (root) {
   'use strict';
 
-  function client() { return root.SupabaseClient; }
-
   function apiHeaders(extra) {
-    return client().auth.getSession().then(function (res) {
-      var t = res.data && res.data.session ? res.data.session.access_token : null;
-      var h = extra || {};
-      if (t) h['Authorization'] = 'Bearer ' + t;
-      return h;
-    });
+    return Promise.resolve(root.Session.headers(extra));
   }
 
   function request(method, url, payload) {

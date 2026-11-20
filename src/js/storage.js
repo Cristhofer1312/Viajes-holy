@@ -1,5 +1,4 @@
-// src/js/storage.js — versión Supabase/Netlify
-// Reemplaza la versión anterior con IndexedDB y localStorage
+// src/js/storage.js — acceso a la API propia (/api/*) del servidor
 // Mantiene la MISMA interfaz pública: Store.loadCatalog(), Store.saveCatalog(), etc.
 // app.js no necesita ningún cambio.
 
@@ -31,16 +30,15 @@
     };
   }
 
-  // Obtiene el JWT de la sesión activa
+  // Obtiene el JWT de la sesión activa (ver session.js)
   function getToken() {
-    return (root.__supabaseSession && root.__supabaseSession.access_token) || null;
+    return root.Session ? root.Session.token() : null;
   }
 
   function authHeaders() {
-    var token = getToken();
-    var headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-    return headers;
+    return root.Session
+      ? root.Session.headers({ 'Content-Type': 'application/json' })
+      : { 'Content-Type': 'application/json' };
   }
 
   function fetchJSON(url, opts) {
@@ -57,7 +55,7 @@
   // ─── API pública ─────────────────────────────────────────────────────────────
 
   /**
-   * Carga el catálogo desde Supabase vía la Netlify Function.
+   * Carga el catálogo desde la BD vía /api/plantillas-list.
    * Requiere sesión: /api/plantillas-list exige catalog:read.
    * Devuelve Promise<plantilla[]> en el formato interno de app.js.
    */
@@ -126,6 +124,29 @@
     });
   }
 
+  /**
+   * Sube una foto de posada (File/Blob) al servidor.
+   * Devuelve Promise<string> con la URL pública (/uploads/<posada>/<archivo>).
+   */
+  function subirImagen(posadaId, blob) {
+    var tipo = (blob && blob.type) || 'image/jpeg';
+    var h = root.Session ? root.Session.headers() : {};
+    h['Content-Type'] = tipo;
+    h['X-Posada-Id'] = posadaId;
+    return fetchJSON('/api/imagen-upload', { method: 'POST', headers: h, body: blob })
+      .then(function (res) { return res.publicUrl; });
+  }
+
+  /** Convierte un dataURL (data:image/...;base64,...) en Blob. */
+  function dataUrlABlob(dataUrl) {
+    var partes = String(dataUrl).split(',');
+    var mime = (partes[0].match(/^data:([^;]+)/) || [])[1] || 'image/jpeg';
+    var bin = atob(partes[1] || '');
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+
   // En la versión web no hay Electron
   function tieneElectron() { return false; }
 
@@ -156,6 +177,8 @@
     leerArchivoJSON:    leerArchivoJSON,
     tieneElectron:      tieneElectron,
     guardarCotizacion:  guardarCotizacion,
+    subirImagen:        subirImagen,
+    dataUrlABlob:       dataUrlABlob,
   };
 
 })(typeof self !== 'undefined' ? self : this);

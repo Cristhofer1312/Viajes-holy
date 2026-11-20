@@ -1,13 +1,14 @@
 // netlify/functions/usuarios-desactivar.js
 // POST /api/usuarios-desactivar — desactiva un usuario (activo: false)
 // Requiere: user:deactivate con restricción de rango + noPropio
+//
+// Efecto inmediato: verificarAuth rechaza a los usuarios inactivos en cada
+// petición, así que su sesión deja de funcionar al instante.
 
-const { supabase } = require('./_lib/supabase');
-const { verificarAuth, puede, ok, error, handleOptions, RANGO } = require('./_lib/auth');
-
-function esAuthError(msg) {
-  return /Sin autorización|Token inválido|no registrado|inactivo/i.test(String(msg || ''));
-}
+const { query } = require('./_lib/db');
+const {
+  verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo, adminsActivosRestantes,
+} = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
@@ -16,45 +17,24 @@ exports.handler = async (event) => {
     const { id } = JSON.parse(event.body || '{}');
     if (!id) return error('Falta id del usuario', 400);
 
-    // Obtener el objetivo
-    const { data: objetivo, error: getErr } = await supabase
-      .from('usuarios')
-      .select('id, rol, activo')
-      .eq('id', id)
-      .single();
-
-    if (getErr || !objetivo) return error('Usuario no encontrado', 404);
-
-    const objetivoConRango = { ...objetivo, rango: RANGO[objetivo.rol] || 0 };
+    const objetivo = await buscarObjetivo(id);
+    if (!objetivo) return error('Usuario no encontrado', 404);
 
     // puede() ya verifica noPropio (no puede desactivarse a sí mismo)
-    if (!puede(actor, 'user:deactivate', objetivoConRango)) {
+    if (!puede(actor, 'user:deactivate', objetivo)) {
       return error('Sin permisos para desactivar este usuario', 403);
     }
 
     // Guarda: nunca dejar el sistema sin admins activos
     if (objetivo.rol === 'admin' && objetivo.activo) {
-      const { count, error: countErr } = await supabase
-        .from('usuarios')
-        .select('id', { count: 'exact', head: true })
-        .eq('rol', 'admin')
-        .eq('activo', true)
-        .neq('id', id);
-      if (countErr) throw countErr;
-      if ((count || 0) === 0) {
+      if ((await adminsActivosRestantes(id)) === 0) {
         return error('No se puede desactivar al único administrador activo', 409);
       }
     }
 
-    const { error: dbErr } = await supabase
-      .from('usuarios')
-      .update({ activo: false })
-      .eq('id', id);
-
-    if (dbErr) throw dbErr;
+    await query('UPDATE usuarios SET activo = false WHERE id = $1', [id]);
     return ok({ success: true, id, activo: false });
   } catch (err) {
-    console.error('[usuarios-desactivar]', err.message);
-    return error(err.message, esAuthError(err.message) ? 401 : 500);
+    return fallo('usuarios-desactivar', err);
   }
 };

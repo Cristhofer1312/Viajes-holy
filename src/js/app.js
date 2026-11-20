@@ -548,13 +548,16 @@
       stage.querySelectorAll('.scale-box').forEach(function (b) {
         b.style.setProperty('--s', s.toFixed(4));
       });
+      // Un item puede traer varias hojas A4 apiladas (continuaciones de
+      // SOLO VUELO): su alto es la suma de hojas + el margen entre ellas.
+      var SEP_HOJAS = 30; // margin-bottom de .page-sheet
       stage.querySelectorAll('.preview-item').forEach(function (item) {
-        var page = item.querySelector('.page-sheet');
-        if (page && page.classList.contains('dynamic-height')) {
-          item.style.height = Math.round(page.offsetHeight * s + 24) + 'px';
-        } else {
-          item.style.height = Math.round(1123 * s + 24) + 'px';
-        }
+        var hojas = item.querySelectorAll('.page-sheet');
+        var alto = 0;
+        hojas.forEach(function (h, i) {
+          alto += (h.classList.contains('dynamic-height') ? h.offsetHeight : 1123) + (i ? SEP_HOJAS : 0);
+        });
+        item.style.height = Math.round((alto || 1123) * s + 24) + 'px';
       });
     });
   }

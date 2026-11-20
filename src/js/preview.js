@@ -257,67 +257,58 @@
       '</div>';
   }
 
-  // ---- SOLO VUELO (modelo plantillas/preview.js: renderSoloVueloPDF) ----
-  // Hoja única aérea: header COTIZACIÓN AÉREA/PNR, tramos dinámicos con
-  // duración estimada, equipaje, restricciones y tarifas. Sin rastro de
-  // posada/destino/galería. page2 vacía a propósito.
-  function renderSoloVueloPDF(t, q) {
-    q = q || {};
-    var v = q.vuelo || {};
-    var vuelos = (v.dinamicos || []);
-    var pax = q.pasajeros || { adultos: 0, ninos: 0, infantes: 0 };
-    var tar = q.tarifas || {};
-    var moneda = tar.moneda || 'USD';
-    var money = function (n) {
-      return esc(root.Monext ? root.Monext.formatMoney(n, moneda) : n);
-    };
+  // ---- SOLO VUELO ----
+  // Hojas A4 FIJAS (1123px) paginadas aquí, no por el navegador al imprimir:
+  // así la vista previa muestra exactamente las páginas que saldrán en el PDF.
+  //  · Página 1: encabezado completo + los vuelos que quepan.
+  //  · Continuación: encabezado compacto (PNR + "PÁGINA x DE n") + vuelos.
+  //  · Última página: el cierre (restricciones, equipaje, pasajeros, tarifas)
+  //    anclado al pie; nunca se parte y nunca queda solo en una página.
+  //  · Franja morada al borde inferior de cada hoja.
+  // Las alturas (px a 794px de ancho) se midieron sobre el render real y se
+  // verifican con test/solovuelo-paginacion.e2e.cjs.
+  var SV = {
+    util: 1123 - 40 - 30,      // alto de hoja - padding superior - franja
+    cabecera: 128,             // encabezado completo (incluye margen)
+    cabeceraCompacta: 73,      // encabezado de continuación
+    vuelo: 133,                // un tramo: 117px + margen de 16px
+    cierreBase: 492,           // restricciones + tarifas con 2 líneas de equipaje
+    lineaEquipaje: 23,         // cada línea extra de equipaje
+    charsPorLinea: 60,         // conservador: una línea real admite ~70
+    holgura: 16,               // margen de seguridad (fuentes / redondeos)
+  };
 
-    var vuelosHtml = vuelos.map(function (vd) {
-      return '' +
-        '<div class="flex items-start gap-8 mb-6" style="page-break-inside: avoid; break-inside: avoid;">' +
-        '<div class="w-16 pt-1">' +
-        '<h3 class="text-[#20B2AA] font-montserrat font-bold text-[17px] tracking-wide">' + esc(vd.tipo) + '</h3>' +
-        '<div class="w-12 h-12 bg-[#800080] rounded-full flex items-center justify-center text-white mt-1">' +
-        '<svg class="w-7 h-7 transform -rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16V14L13,9V3.5C13,2.67 12.33,2 11.5,2C10.67,2 10,2.67 10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/></svg>' +
-        '</div></div>' +
-        '<div class="flex-1">' +
-        '<div class="flex justify-end mb-1">' +
-        '<span class="text-[#800080] font-montserrat font-bold text-[14px] tracking-wider uppercase">FECHA: ' + esc(vd.fecha) + '</span>' +
-        '</div>' +
-        '<div class="grid grid-cols-12 items-center gap-4">' +
-        '<div class="col-span-3"><span class="text-[#64748b] font-montserrat font-bold text-[12px] tracking-widest block uppercase">SALIDA</span></div>' +
-        '<div class="col-span-4"><span class="text-[#94a3b8] font-montserrat font-bold text-[13px] tracking-wide uppercase">' + esc(vd.origen) + '</span></div>' +
-        '<div class="col-span-2 text-center"><span class="text-[#64748b] font-montserrat font-normal text-[15px]">' + esc(vd.salida) + '</span></div>' +
-        '<div class="col-span-3 text-right"><span class="text-[#20B2AA] font-montserrat font-bold text-[12px] tracking-widest block uppercase">DURACIÓN ESTIMADA</span></div>' +
-        '</div>' +
-        '<div class="grid grid-cols-12 items-center gap-4 my-1">' +
-        '<div class="col-span-3"></div><div class="col-span-4"></div>' +
-        '<div class="col-span-2 flex justify-center">' +
-        '<svg class="w-6 h-6 text-[#cbd5e1]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>' +
-        '</div>' +
-        '<div class="col-span-3 text-right"><span class="text-[#94a3b8] font-montserrat font-normal text-[13px] uppercase">' + esc(vd.duracion) + '</span></div>' +
-        '</div>' +
-        '<div class="grid grid-cols-12 items-center gap-4">' +
-        '<div class="col-span-3"><span class="text-[#64748b] font-montserrat font-bold text-[12px] tracking-widest block uppercase">LLEGADA</span></div>' +
-        '<div class="col-span-4"><span class="text-[#94a3b8] font-montserrat font-bold text-[13px] tracking-wide uppercase">' + esc(vd.destino) + '</span></div>' +
-        '<div class="col-span-2 text-center"><span class="text-[#64748b] font-montserrat font-normal text-[15px]">' + esc(vd.llegada) + '</span></div>' +
-        '<div class="col-span-3"></div>' +
-        '</div></div></div>';
-    }).join('');
+  function svLineasEquipaje(equipaje) {
+    return String(equipaje || '').split('\n').filter(Boolean).reduce(function (n, l) {
+      return n + Math.max(1, Math.ceil(l.length / SV.charsPorLinea));
+    }, 0);
+  }
 
-    var equipajeItems = String(v.equipaje || '').split('\n').filter(Boolean).map(function (e) {
-      return '<div class="text-[13px] font-montserrat font-normal text-[#334155] uppercase mb-0.5">' + esc(e) + '</div>';
-    }).join('');
+  /** Reparte N vuelos en páginas. Devuelve [{ vuelos: [...], cierre: bool }]. */
+  function paginarSoloVuelo(vuelos, equipaje) {
+    var cierre = SV.cierreBase + (svLineasEquipaje(equipaje) - 2) * SV.lineaEquipaje;
+    var paginas = [];
+    var i = 0;
+    while (true) {
+      var disponible = SV.util - SV.holgura - (paginas.length ? SV.cabeceraCompacta : SV.cabecera);
+      var restantes = vuelos.length - i;
+      if (restantes * SV.vuelo + cierre <= disponible) {
+        paginas.push({ vuelos: vuelos.slice(i), cierre: true });
+        return paginas;
+      }
+      var caben = Math.max(1, Math.floor(disponible / SV.vuelo));
+      // Si todos los vuelos restantes caben pero el cierre no, se baja el
+      // último vuelo a la página siguiente para que el cierre no quede solo.
+      if (caben >= restantes) caben = Math.max(1, restantes - 1);
+      if (restantes === 0) { paginas.push({ vuelos: [], cierre: true }); return paginas; }
+      paginas.push({ vuelos: vuelos.slice(i, i + caben), cierre: false });
+      i += caben;
+    }
+  }
 
-    var restriccionesDefault = 'NO REEMBOLSABLE\nNO TRANSFERIBLE\nPERMITE CAMBIO CON PENALIDAD + DIFERENCIA TARIFARIA (EN CASO DE QUE APLIQUE)';
-    var restriccionesItems = restriccionesDefault.split('\n').filter(Boolean).map(function (r) {
-      return '<div class="text-[13px] font-montserrat font-normal text-[#334155] uppercase mb-0.5">• ' + esc(r) + '</div>';
-    }).join('');
-
-    var page1 = '' +
-      '<div id="page1" class="page-sheet page-a4 dynamic-height bg-white flex flex-col pt-10" style="padding-bottom: 0;">' +
-      '<div class="px-14 flex-1 flex flex-col">' +
-      '<div class="flex justify-between items-start mb-8 shrink-0">' +
+  function svCabecera(v, q) {
+    return '' +
+      '<div class="flex justify-between items-start mb-6 shrink-0">' +
       '<div class="flex gap-4">' +
       '<div class="w-[88px] h-[88px] bg-[#800080] rounded-[2rem] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden p-2">' +
       '<img src="assets/img/Logo Holy.png" alt="Logo Holy" class="w-full h-full object-contain"></div>' +
@@ -329,20 +320,79 @@
       '<div class="text-[13px] font-montserrat font-extrabold text-[#800080] tracking-wide uppercase">FECHA DE COTIZACIÓN: <span class="font-bold text-[#64748b]">' + esc(q.fechaCotizacion) + '</span></div>' +
       '</div></div>' +
       '<div class="pt-2"><img src="assets/img/ViajesHoly logo2.png" alt="Viajes Holy" class="h-12 w-auto object-contain"></div>' +
+      '</div>';
+  }
+
+  function svCabeceraCompacta(v, pagina, total) {
+    return '' +
+      '<div class="flex justify-between items-center pb-3 mb-5 border-b border-[#800080]/20 shrink-0">' +
+      '<div class="flex items-center gap-3">' +
+      '<div class="w-10 h-10 bg-[#800080] rounded-xl flex items-center justify-center shrink-0 overflow-hidden p-1">' +
+      '<img src="assets/img/Logo Holy.png" alt="Logo Holy" class="w-full h-full object-contain"></div>' +
+      '<div class="text-[14px] tracking-wide uppercase"><span class="text-[#800080] font-montserrat font-extrabold">COTIZACIÓN AÉREA/ </span><span class="font-montserrat font-extrabold text-[#560B5B]">' + esc(v.pnr) + '</span>' +
+      '<span class="text-[#64748b] font-montserrat font-normal"> · CONTINUACIÓN</span></div>' +
       '</div>' +
-      '<div class="mb-4">' + vuelosHtml + '</div>' +
-      '<div class="mt-4 mb-8 shrink-0" style="page-break-inside: avoid;">' +
+      '<div class="text-[12px] text-[#64748b] font-montserrat font-bold tracking-widest uppercase">PÁGINA ' + pagina + ' DE ' + total + '</div>' +
+      '</div>';
+  }
+
+  function svVuelo(vd) {
+    return '' +
+      '<div class="flex items-start gap-8 mb-4">' +
+      '<div class="w-16 pt-1">' +
+      '<h3 class="text-[#20B2AA] font-montserrat font-bold text-[17px] tracking-wide">' + esc(vd.tipo) + '</h3>' +
+      '<div class="w-12 h-12 bg-[#800080] rounded-full flex items-center justify-center text-white mt-1">' +
+      '<svg class="w-7 h-7 transform -rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16V14L13,9V3.5C13,2.67 12.33,2 11.5,2C10.67,2 10,2.67 10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/></svg>' +
+      '</div></div>' +
+      '<div class="flex-1">' +
+      '<div class="flex justify-end mb-1">' +
+      '<span class="text-[#800080] font-montserrat font-bold text-[14px] tracking-wider uppercase">FECHA: ' + esc(vd.fecha) + '</span>' +
+      '</div>' +
+      '<div class="grid grid-cols-12 items-center gap-4">' +
+      '<div class="col-span-3"><span class="text-[#64748b] font-montserrat font-bold text-[12px] tracking-widest block uppercase">SALIDA</span></div>' +
+      '<div class="col-span-4"><span class="text-[#94a3b8] font-montserrat font-bold text-[13px] tracking-wide uppercase">' + esc(vd.origen) + '</span></div>' +
+      '<div class="col-span-2 text-center"><span class="text-[#64748b] font-montserrat font-normal text-[15px]">' + esc(vd.salida) + '</span></div>' +
+      '<div class="col-span-3 text-right"><span class="text-[#20B2AA] font-montserrat font-bold text-[12px] tracking-widest block uppercase">DURACIÓN ESTIMADA</span></div>' +
+      '</div>' +
+      '<div class="grid grid-cols-12 items-center gap-4 my-1">' +
+      '<div class="col-span-3"></div><div class="col-span-4"></div>' +
+      '<div class="col-span-2 flex justify-center">' +
+      '<svg class="w-6 h-6 text-[#cbd5e1]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>' +
+      '</div>' +
+      '<div class="col-span-3 text-right"><span class="text-[#94a3b8] font-montserrat font-normal text-[13px] uppercase">' + esc(vd.duracion) + '</span></div>' +
+      '</div>' +
+      '<div class="grid grid-cols-12 items-center gap-4">' +
+      '<div class="col-span-3"><span class="text-[#64748b] font-montserrat font-bold text-[12px] tracking-widest block uppercase">LLEGADA</span></div>' +
+      '<div class="col-span-4"><span class="text-[#94a3b8] font-montserrat font-bold text-[13px] tracking-wide uppercase">' + esc(vd.destino) + '</span></div>' +
+      '<div class="col-span-2 text-center"><span class="text-[#64748b] font-montserrat font-normal text-[15px]">' + esc(vd.llegada) + '</span></div>' +
+      '<div class="col-span-3"></div>' +
+      '</div></div></div>';
+  }
+
+  function svCierre(v, pax, tar, money) {
+    var equipajeItems = String(v.equipaje || '').split('\n').filter(Boolean).map(function (e) {
+      return '<div class="text-[13px] font-montserrat font-normal text-[#334155] uppercase mb-0.5">' + esc(e) + '</div>';
+    }).join('');
+    var restriccionesDefault = 'NO REEMBOLSABLE\nNO TRANSFERIBLE\nPERMITE CAMBIO CON PENALIDAD + DIFERENCIA TARIFARIA (EN CASO DE QUE APLIQUE)';
+    var restriccionesItems = restriccionesDefault.split('\n').filter(Boolean).map(function (r) {
+      return '<div class="text-[13px] font-montserrat font-normal text-[#334155] uppercase mb-0.5">• ' + esc(r) + '</div>';
+    }).join('');
+
+    return '' +
+      // mt-auto: el cierre se ancla al pie de la última hoja
+      '<div class="sv-cierre mt-auto shrink-0">' +
+      '<div class="mt-2 mb-5">' +
       '<div class="flex items-center gap-3 mb-4">' +
       '<div class="w-12 h-12 shrink-0 rounded-full border-2 border-[#800080] flex items-center justify-center bg-[#fdf5ff] overflow-hidden">' +
       '<img src="assets/img/Boletos.png" alt="Boletos" class="w-8 h-8 object-contain"></div>' +
       '<h3 class="text-[#800080] font-montserrat font-extrabold text-[14px] tracking-wide uppercase">RESTRICCIONES / ' + esc(v.pnr) + '</h3>' +
       '</div>' +
-      '<div class="pl-4 mb-6">' +
+      '<div class="pl-4">' +
       '<div class="text-[#64748b] font-montserrat font-bold text-[13px] uppercase mb-3">TARIFA INCLUYE TODOS LOS IMPUESTOS Y TASAS</div>' +
       '<div class="mb-3"><div class="text-[#64748b] font-montserrat font-bold text-[13px] uppercase mb-1">FRANQUICIA DE EQUIPAJE</div>' + equipajeItems + '</div>' +
       '<div><div class="text-[#64748b] font-montserrat font-bold text-[13px] uppercase mb-1">RESTRICCIONES:</div>' + restriccionesItems + '</div>' +
       '</div></div>' +
-      '<div class="mt-auto mb-8 shrink-0" style="page-break-inside: avoid;">' +
+      '<div class="mb-5">' +
       '<div class="pl-4 mb-2 text-[13px]">' +
       '<span class="text-[#800080] font-montserrat font-extrabold uppercase">ADULTOS</span> <span class="text-[#800080] font-montserrat font-normal ml-1">' + pax.adultos + '</span>' +
       '<span class="text-[#800080] font-montserrat font-normal mx-2">-</span>' +
@@ -350,7 +400,7 @@
       '<span class="text-[#800080] font-montserrat font-normal mx-2">-</span>' +
       '<span class="text-[#800080] font-montserrat font-extrabold uppercase">INFANTES</span> <span class="text-[#800080] font-montserrat font-normal ml-1">' + pax.infantes + '</span>' +
       '</div>' +
-      '<div class="flex justify-between items-end mt-10 mb-2 px-4">' +
+      '<div class="flex justify-between items-end mt-6 mb-2 px-4">' +
       '<div class="w-40"><img src="assets/img/ViajesHoly logo2.png" alt="Viajes Holy" class="h-8 w-auto opacity-80 object-contain"></div>' +
       '<div class="flex flex-col items-end gap-2 text-right">' +
       '<div class="flex justify-between w-[300px] items-center pr-6">' +
@@ -363,11 +413,44 @@
       '<span class="text-[#94a3b8] font-montserrat font-normal text-[12px] uppercase tracking-wide pr-4">TOTAL ' + pax.adultos + ' ADT - ' + pax.ninos + ' CHD - ' + pax.infantes + ' INF</span>' +
       '<div class="bg-[#800080] text-white px-7 py-3 rounded-xl shadow-md border-b-[4px] border-[#560B5B] min-w-[120px] text-center">' +
       '<span class="font-montserrat font-black text-xl">' + money(tar.montoTotal) + '</span>' +
-      '</div></div></div></div></div></div>' +
-      '<div class="w-full bg-[#800080] rounded-t-[2.5rem] h-[30px] shrink-0"></div>' +
+      '</div></div></div></div></div>' +
       '</div>';
+  }
 
-    return { page1: page1, page2: '' };
+  function svBarra(pagina, total) {
+    var num = total > 1
+      ? '<span class="text-white/90 font-montserrat font-bold text-[10px] tracking-widest">' + pagina + ' / ' + total + '</span>'
+      : '';
+    return '<div class="w-full bg-[#800080] rounded-t-[2.5rem] shrink-0 flex items-center justify-center" style="height:30px">' + num + '</div>';
+  }
+
+  function renderSoloVueloPDF(t, q) {
+    q = q || {};
+    var v = q.vuelo || {};
+    var pax = q.pasajeros || { adultos: 0, ninos: 0, infantes: 0 };
+    var tar = q.tarifas || {};
+    var moneda = tar.moneda || 'USD';
+    var money = function (n) {
+      return esc(root.Monext ? root.Monext.formatMoney(n, moneda) : n);
+    };
+
+    var paginas = paginarSoloVuelo(v.dinamicos || [], v.equipaje);
+    var total = paginas.length;
+    var hojas = paginas.map(function (pg, idx) {
+      var n = idx + 1;
+      return '' +
+        '<div id="page' + n + '" class="page-sheet sv-hoja bg-white flex flex-col" style="padding-top:40px; padding-bottom:0;">' +
+        '<div class="px-14 flex-1 min-h-0 flex flex-col">' +
+        (idx === 0 ? svCabecera(v, q) : svCabeceraCompacta(v, n, total)) +
+        '<div class="sv-vuelos shrink-0">' + pg.vuelos.map(svVuelo).join('') + '</div>' +
+        (pg.cierre ? svCierre(v, pax, tar, money) : '') +
+        '</div>' +
+        svBarra(n, total) +
+        '</div>';
+    });
+
+    // page1 = primera hoja; page2 = todas las continuaciones (0..n hojas)
+    return { page1: hojas[0], page2: hojas.slice(1).join(''), paginas: total };
   }
 
   // ---- PRESENTACIÓN DE PLANTILLA ----
@@ -432,5 +515,6 @@
     renderPage1: renderPage1,
     renderPage2: renderPage2,
     renderSoloVueloPDF: renderSoloVueloPDF,
+    paginarSoloVuelo: paginarSoloVuelo,
   };
 })(typeof self !== 'undefined' ? self : this);

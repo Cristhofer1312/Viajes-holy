@@ -24,14 +24,16 @@
     O3: 'SASCA AIRLINES',
     CV: 'AEROCARIBE',
     CW: 'AEROPOSTAL',
-    VH: 'AEROPOSTAL',            // código histórico de Aeropostal
     // ── Venezolanas, chárter ──
+    BS: 'BLUESTAR AVIATION',
     WW: 'VENEZOLANA (RAVSA)',
     AW: 'VENEZOLANA (RAVSA)',    // alias usado antes en este sistema
     G0: 'ALBATROS',
     // ── Extranjeras que operan o han operado rutas a Venezuela ──
     CM: 'COPA AIRLINES',
     AV: 'AVIANCA',
+    G3: 'GOL LINHAS AEREAS',
+    G6: 'GLOBAL X',
     P5: 'WINGO',
     '9R': 'SATENA',
     DO: 'SKY HIGH',
@@ -50,7 +52,6 @@
   // a Los Roques o Canaima): no aparecen en una línea de reserva, pero se
   // sugieren al escribir el nombre de la aerolínea a mano.
   var AIRLINES_SIN_IATA = [
-    'BLUESTAR AVIATION',
     'TRANSMANDU',
     'CIACA AIRLINES',
     'SUNDANCE AIR',

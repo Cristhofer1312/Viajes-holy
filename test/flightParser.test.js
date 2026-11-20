@@ -74,7 +74,7 @@ test('aerolíneas venezolanas actuales, con alias de códigos antiguos', () => {
   const casos = {
     V0: 'CONVIASA', '9V': 'AVIOR AIRLINES', QL: 'LASER AIRLINES', ES: 'ESTELAR AIRLINES',
     RU: 'RUTACA AIRLINES', '5R': 'RUTACA AIRLINES', T9: 'TURPIAL AIRLINES', O3: 'SASCA AIRLINES',
-    CV: 'AEROCARIBE', CW: 'AEROPOSTAL', VH: 'AEROPOSTAL', WW: 'VENEZOLANA (RAVSA)', G0: 'ALBATROS',
+    CV: 'AEROCARIBE', CW: 'AEROPOSTAL', BS: 'BLUESTAR AVIATION', WW: 'VENEZOLANA (RAVSA)', G0: 'ALBATROS',
   };
   for (const [code, nombre] of Object.entries(casos)) {
     const r = parseFlightLine(`${code}123 23OCT FR CCSPMV SS1 0945 1025`, { today: TODAY });
@@ -105,12 +105,28 @@ test('aeropuertos agregados y Las Piedras con su código real', () => {
   assert.equal(parseFlightLine('CM300 25OCT SU CCSPTY HK1 0700 0800', { today: TODAY }).destino, 'PANAMA');
 });
 
+test('GOL (G3) São Paulo → Caracas', () => {
+  const r = parseFlightLine('G3 7700 23OCT FR GRUCCS HK1 2300 0330+1', { today: TODAY });
+  assert.equal(r.aerolinea, 'GOL LINHAS AEREAS');
+  assert.equal(r.origen, 'SAO PAULO');
+  assert.deepEqual(r.avisos, []);
+});
+
+test('Global X (G6)', () => {
+  assert.equal(parseFlightLine('G6 100 23OCT FR MIACCS HK1 0800 1130', { today: TODAY }).aerolinea, 'GLOBAL X');
+});
+
+test('VH ya no es Aeropostal', () => {
+  assert.equal(parseFlightLine('VH100 23OCT FR CCSPMV SS1 0945 1025', { today: TODAY }).aerolineaRegistrada, false);
+});
+
 test('nombresAerolineas: sin repetidos e incluye chárter sin IATA', () => {
   const { nombresAerolineas } = require('../src/js/flightParser.js');
   const n = nombresAerolineas();
   assert.equal(new Set(n).size, n.length);
   assert.ok(n.includes('RUTACA AIRLINES'));
   assert.ok(n.includes('BLUESTAR AVIATION'));
+  assert.ok(n.includes('TRANSMANDU'));
 });
 
 test('fechas que no existen y rutas imposibles se rechazan', () => {

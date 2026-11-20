@@ -67,12 +67,39 @@ function handleOptions() {
   return { statusCode: 204, headers: CORS_HEADERS, body: '' };
 }
 
-/** Respuesta de error a partir de una excepción: 401 si es de auth, si no 500. */
+/** Error con código HTTP propio (validación de entrada → 400). */
+function errorHttp(msg, status) {
+  return Object.assign(new Error(msg), { status: status || 400 });
+}
+
+/**
+ * Lee el cuerpo JSON de la petición. JSON mal formado o algo que no sea un
+ * objeto ({…}) es un error del cliente (400), no del servidor.
+ */
+function leerJSON(event) {
+  let datos;
+  try {
+    datos = JSON.parse(event.body || '{}');
+  } catch (_) {
+    throw errorHttp('El cuerpo de la petición no es JSON válido', 400);
+  }
+  if (!datos || typeof datos !== 'object' || Array.isArray(datos)) {
+    throw errorHttp('Se esperaba un objeto JSON', 400);
+  }
+  return datos;
+}
+
+/**
+ * Respuesta de error a partir de una excepción: 401 si es de auth, el código
+ * propio si lo trae (400 de validación) y si no 500 genérico. El detalle de
+ * un 500 (mensajes de Postgres, rutas…) solo va al log, nunca al cliente.
+ */
 function fallo(nombre, err) {
   const msg = String((err && err.message) || err || 'Error');
   if (esAuthError(msg)) return error(msg, 401);
+  if (err && err.status >= 400 && err.status < 500) return error(msg, err.status);
   console.error(`[${nombre}]`, msg);
-  return error(msg, 500);
+  return error('Error interno del servidor', 500);
 }
 
 /** Cuenta los admins activos excluyendo `idExcluido` (guardas de "último admin"). */
@@ -93,5 +120,5 @@ async function buscarObjetivo(id) {
 
 module.exports = {
   verificarAuth, puede, RANGO, REGLAS: Roles.REGLAS, ok, error, handleOptions,
-  CORS_HEADERS, esAuthError, fallo, adminsActivosRestantes, buscarObjetivo, COLUMNAS_PERFIL,
+  CORS_HEADERS, esAuthError, fallo, leerJSON, errorHttp, adminsActivosRestantes, buscarObjetivo, COLUMNAS_PERFIL,
 };

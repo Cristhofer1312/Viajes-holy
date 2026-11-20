@@ -5,14 +5,14 @@
 // sin poder promover a admin (regla `asigna`).
 
 const { query } = require('./_lib/db');
-const { verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo } = require('./_lib/auth');
+const { verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo, leerJSON } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
   try {
     const actor = await verificarAuth(event);
 
-    const { id, nombre, rol } = JSON.parse(event.body || '{}');
+    const { id, nombre, rol } = leerJSON(event);
     if (!id) return error('Falta id del usuario', 400);
     if (rol && !['admin', 'encargado', 'agente'].includes(rol)) return error('Rol inválido', 400);
 

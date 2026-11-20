@@ -7,11 +7,13 @@
 
 const { query, tx } = require('./_lib/db');
 const uploads = require('./_lib/uploads');
-const { verificarAuth, puede, ok, error, handleOptions, fallo } = require('./_lib/auth');
+const { verificarAuth, puede, ok, error, handleOptions, fallo, leerJSON } = require('./_lib/auth');
 
 // Fotos válidas: las servidas por /uploads/ (o URLs http(s) heredadas)
 function esUrlFoto(u) {
-  return typeof u === 'string' && (u.startsWith(uploads.URL_PREFIX) || /^https?:\/\//.test(u));
+  if (typeof u !== 'string' || u.length > 2000) return false;
+  if (u.startsWith(uploads.URL_PREFIX)) return /^\/uploads\/[a-z0-9][a-z0-9-]{0,99}\/[a-z0-9]+\.(jpg|png|webp)$/i.test(u);
+  return /^https?:\/\/[^\s"'<>]+$/i.test(u);
 }
 
 exports.handler = async (event) => {
@@ -20,10 +22,26 @@ exports.handler = async (event) => {
   try {
     const usuario = await verificarAuth(event);
 
-    const plantilla = JSON.parse(event.body || '{}');
+    const plantilla = leerJSON(event);
+    const texto = (v, max) => (typeof v === 'string' || typeof v === 'number') ? String(v).trim().slice(0, max) : '';
+    plantilla.id = typeof plantilla.id === 'string' ? plantilla.id : '';
+    plantilla.nombrePosada = texto(plantilla.nombrePosada, 200);
+    plantilla.destino = texto(plantilla.destino, 200);
     if (!plantilla.id || !plantilla.nombrePosada || !plantilla.destino) {
-      return error('Faltan campos requeridos: id, nombrePosada, destino', 400);
+      return error('Faltan campos requeridos: id, nombrePosada, destino (texto)', 400);
     }
+    for (const campo of ['tipoServicioDefault', 'checkInHora', 'checkOutHora', 'tipoTemplate']) {
+      if (plantilla[campo] != null && typeof plantilla[campo] !== 'string') {
+        return error(`El campo ${campo} debe ser texto`, 400);
+      }
+      if (typeof plantilla[campo] === 'string') plantilla[campo] = plantilla[campo].slice(0, 200);
+    }
+    // Layout de fotos: entero de 1 a 4 (lo que ofrece el editor)
+    const layout = Number(plantilla.layoutFotos);
+    plantilla.layoutFotos = Number.isFinite(layout) ? Math.min(4, Math.max(1, Math.round(layout))) : 1;
+    // Inclusiones: solo textos no vacíos (máx. 100 de 500 caracteres)
+    plantilla.inclusiones = (Array.isArray(plantilla.inclusiones) ? plantilla.inclusiones : [])
+      .map((x) => texto(x, 500)).filter(Boolean).slice(0, 100);
     if (!uploads.carpetaSegura(plantilla.id)) return error('id de plantilla inválido', 400);
 
     // El permiso depende de si la posada ya existe: crear o actualizar
@@ -49,14 +67,14 @@ exports.handler = async (event) => {
           activa = true`,
         [
           plantilla.id, plantilla.nombrePosada, plantilla.destino,
-          plantilla.tipoServicioDefault || '', Number(plantilla.layoutFotos) || 1,
+          plantilla.tipoServicioDefault || '', plantilla.layoutFotos,
           plantilla.checkInHora || '15:00', plantilla.checkOutHora || '13:00',
           plantilla.tipoTemplate || 'COMPLETO',
         ]);
 
       // Reemplazar inclusiones
       await c.query('DELETE FROM posada_inclusiones WHERE posada_id = $1', [plantilla.id]);
-      const incl = Array.isArray(plantilla.inclusiones) ? plantilla.inclusiones : [];
+      const incl = plantilla.inclusiones;
       for (let i = 0; i < incl.length; i++) {
         await c.query('INSERT INTO posada_inclusiones (posada_id, texto, orden) VALUES ($1, $2, $3)',
           [plantilla.id, String(incl[i]), i]);
@@ -76,6 +94,10 @@ exports.handler = async (event) => {
 
     // Fuera de la transacción: borrar del disco las fotos que se quitaron
     await uploads.borrarUrls(fotosQuitadas).catch(e => console.warn('[plantillas-save] limpieza:', e.message));
+    // Fotos de plantillas nuevas que nunca se guardaron (subidas hace > 24 h)
+    query('SELECT id FROM posadas')
+      .then(({ rows }) => uploads.barrerHuerfanas(rows.map((r) => r.id)))
+      .catch(e => console.warn('[plantillas-save] barrido:', e.message));
 
     return ok({ success: true, id: plantilla.id });
   } catch (err) {

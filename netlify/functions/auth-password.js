@@ -7,7 +7,7 @@
 
 const { query } = require('./_lib/db');
 const token = require('./_lib/token');
-const { verificarAuth, ok, error, handleOptions, fallo } = require('./_lib/auth');
+const { verificarAuth, ok, error, handleOptions, fallo, leerJSON } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
@@ -15,7 +15,7 @@ exports.handler = async (event) => {
 
   try {
     const usuario = await verificarAuth(event);
-    const { newPass } = JSON.parse(event.body || '{}');
+    const { newPass } = leerJSON(event);
     if (typeof newPass !== 'string' || newPass.length < 8) {
       return error('La nueva contraseña debe tener al menos 8 caracteres', 400);
     }

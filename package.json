@@ -9,7 +9,7 @@
   "scripts": {
     "start": "NODE_ENV=production node server.js",
     "dev": "node server.js",
-    "test": "node --test test/roles.test.js test/flightParser.test.js test/usuarios.test.js test/token.test.js",
+    "test": "node --test test/roles.test.js test/flightParser.test.js test/quoteModel.test.js test/usuarios.test.js test/token.test.js",
     "create-admin": "node scripts/create-admin.js",
     "migrar-supabase": "node scripts/migrar-desde-supabase.js"
   },

@@ -6,7 +6,7 @@
 
 const { query } = require('./_lib/db');
 const token = require('./_lib/token');
-const { ok, error, handleOptions, RANGO } = require('./_lib/auth');
+const { ok, error, handleOptions, RANGO, leerJSON } = require('./_lib/auth');
 
 const MAX_INTENTOS = 10;
 const VENTANA_MS = 15 * 60 * 1000;
@@ -36,7 +36,7 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return error('Método no permitido', 405);
 
   try {
-    const body = JSON.parse(event.body || '{}');
+    const body = leerJSON(event);
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const pass = typeof body.pass === 'string' ? body.pass : '';
     if (!email || !pass) return error('Credenciales inválidas', 401);
@@ -63,6 +63,7 @@ exports.handler = async (event) => {
       usuario: { id: u.id, email: u.email, nombre: u.nombre, rol: u.rol, activo: u.activo, rango: RANGO[u.rol] || 0 },
     });
   } catch (err) {
+    if (err.status === 400) return error(err.message, 400);
     console.error('[auth-login]', err.message);
     return error('Error iniciando sesión', 500);
   }

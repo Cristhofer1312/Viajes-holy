@@ -946,6 +946,35 @@
     el.style.color = ok ? '#15803d' : '#dc2626';
   }
 
+  // Muestra la duración de los vuelos Ida/Retorno. A nivel de módulo
+  // para que también la use el autocompletado (antes estaba anidada en
+  // bindEvents y "Rellenar" fallaba con ReferenceError).
+  function updateDuracionStatic() {
+    var sIda = $('q-salida-ida') ? $('q-salida-ida').value : '';
+    var lIda = $('q-llegada-ida') ? $('q-llegada-ida').value : '';
+    var dIdaText = $('duracion-ida-text');
+    var wIda = $('wrap-duracion-ida');
+    if (sIda && lIda) {
+      var c = calcularDuracion(sIda, lIda);
+      if (dIdaText) dIdaText.textContent = c;
+      if (wIda) wIda.classList.remove('hidden');
+    } else {
+      if (wIda) wIda.classList.add('hidden');
+    }
+
+    var sRet = $('q-salida-ret') ? $('q-salida-ret').value : '';
+    var lRet = $('q-llegada-ret') ? $('q-llegada-ret').value : '';
+    var dRetText = $('duracion-ret-text');
+    var wRet = $('wrap-duracion-ret');
+    if (sRet && lRet) {
+      var c2 = calcularDuracion(sRet, lRet);
+      if (dRetText) dRetText.textContent = c2;
+      if (wRet) wRet.classList.remove('hidden');
+    } else {
+      if (wRet) wRet.classList.add('hidden');
+    }
+  }
+
   function applyParsedToStatic(which, p) {
     var isIda = which === 'ida';
     var pre = isIda ? 'q-origen-ida' : 'q-destino-ret';
@@ -976,6 +1005,7 @@
       notes.push('verifica destino fijo (' + fixedEl.value + ' vs ' + fixedName + ')');
     }
     if (!p.aerolineaRegistrada) notes.push('código ' + p.aerolineaCode + ' no registrado');
+    (p.avisos || []).forEach(function (a) { notes.push(a); });
     updateDuracionStatic();
     scheduleQuote();
     return notes;
@@ -1019,6 +1049,15 @@
     if (aero) aero.value = p.aerolinea;
     renderVuelosDinamicosUI();
     scheduleQuote();
+    var avisosDin = (p.avisos || []).slice();
+    if (!p.aerolineaRegistrada) avisosDin.push('código ' + p.aerolineaCode + ' no registrado');
+    var row2 = document.querySelector('#q-vuelos-list [data-index="' + idx + '"] .vd-paste-msg');
+    if (row2) {
+      row2.textContent = '✓ ' + p.origen + ' → ' + p.destino + ' · ' + p.fechaISO + ' · ' + p.salida + '-' + p.llegada +
+        (avisosDin.length ? ' (' + avisosDin.join(', ') + ')' : '');
+      row2.classList.remove('hidden');
+      row2.style.color = avisosDin.length ? '#b45309' : '#15803d';
+    }
     showToast('Vuelo ' + (idx + 1) + ' rellenado: ' + p.origen + ' → ' + p.destino);
   }
 
@@ -1079,6 +1118,9 @@
     $('pv-cotizacion-nombre').textContent = template.nombrePosada ? (template.nombrePosada + ' · ' + template.destino) : '';
     $('q-total-chip').querySelector('span:last-child').textContent =
       Monext.formatMoney(state.qt.tarifas.montoTotal, state.qt.tarifas.moneda);
+
+    var aviso = $('q-aviso-fechas');
+    if (aviso) aviso.classList.toggle('hidden', !state.qt.hospedaje.fechasInvertidas);
 
     var nochesEl = $('q-noches');
     if (nochesEl) {
@@ -1153,6 +1195,14 @@
         aplicarPreviewOculta(b.getAttribute('aria-pressed') !== 'true');
       });
     });
+    // Sugerencias del campo Aerolínea (todas las conocidas por el parser)
+    var listaAero = $('lista-aerolineas');
+    if (listaAero && window.FlightParser && window.FlightParser.nombresAerolineas) {
+      listaAero.innerHTML = window.FlightParser.nombresAerolineas().map(function (n) {
+        return '<option value="' + esc(n) + '"></option>';
+      }).join('');
+    }
+
     var previewOcultaGuardada = false;
     try { previewOcultaGuardada = localStorage.getItem(CLAVE_PREVIEW_OCULTA) === '1'; } catch (e) { /* sin storage */ }
     aplicarPreviewOculta(previewOcultaGuardada);
@@ -1320,32 +1370,6 @@
       }
     });
 
-    function updateDuracionStatic() {
-      var sIda = $('q-salida-ida') ? $('q-salida-ida').value : '';
-      var lIda = $('q-llegada-ida') ? $('q-llegada-ida').value : '';
-      var dIdaText = $('duracion-ida-text');
-      var wIda = $('wrap-duracion-ida');
-      if (sIda && lIda) {
-        var c = calcularDuracion(sIda, lIda);
-        if (dIdaText) dIdaText.textContent = c;
-        if (wIda) wIda.classList.remove('hidden');
-      } else {
-        if (wIda) wIda.classList.add('hidden');
-      }
-
-      var sRet = $('q-salida-ret') ? $('q-salida-ret').value : '';
-      var lRet = $('q-llegada-ret') ? $('q-llegada-ret').value : '';
-      var dRetText = $('duracion-ret-text');
-      var wRet = $('wrap-duracion-ret');
-      if (sRet && lRet) {
-        var c2 = calcularDuracion(sRet, lRet);
-        if (dRetText) dRetText.textContent = c2;
-        if (wRet) wRet.classList.remove('hidden');
-      } else {
-        if (wRet) wRet.classList.add('hidden');
-      }
-    }
-
     document.querySelectorAll('.input-track').forEach(function (el) {
       el.addEventListener('input', function () {
         if (el.id === 'q-salida-ida' || el.id === 'q-llegada-ida' || el.id === 'q-salida-ret' || el.id === 'q-llegada-ret') {
@@ -1409,11 +1433,24 @@
       });
     }
 
+    // Pasajeros: enteros ≥ 0. Al salir del campo se corrige lo escrito
+    // (-2 → 0, 1.5 → 1) para que el formulario muestre lo que se cotiza.
+    ['q-adultos', 'q-ninos', 'q-infantes'].forEach(function (id) {
+      var el = $(id);
+      if (el) el.addEventListener('change', function () {
+        if (el.value === '') return;
+        var n = Monext.parseCantidad(el.value);
+        if (String(n) !== el.value) { el.value = n; scheduleQuote(); }
+      });
+    });
+
     var btnAddVuelo = $('btn-add-vuelo');
     if (btnAddVuelo) {
       btnAddVuelo.addEventListener('click', function () {
         var qtyInput = $('q-vuelo-qty');
-        var qty = qtyInput ? (Number(qtyInput.value) || 1) : 1;
+        // El campo admite 1-20; se respeta aunque escriban otro número
+        var qty = qtyInput ? Math.min(20, Math.max(1, Math.floor(Number(qtyInput.value)) || 1)) : 1;
+        if (qtyInput) qtyInput.value = qty;
         for (var i = 0; i < qty; i++) {
           state.vuelosDinamicos.push({
             tipo: 'IDA', origen: '', destino: '', fecha: '', salida: '', llegada: '', duracion: ''

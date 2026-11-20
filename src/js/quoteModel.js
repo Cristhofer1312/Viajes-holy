@@ -45,7 +45,7 @@
     var b = toDate(checkOutIso);
     if (!a || !b) return { noches: 0, dias: 0 };
     var diff = Math.round((b.getTime() - a.getTime()) / 86400000);
-    if (diff < 0) diff = 0;
+    if (diff < 0) return { noches: 0, dias: 0, invertidas: true };
     return { noches: diff, dias: diff + 1 };
   }
 
@@ -72,12 +72,42 @@
     return sym + s;
   }
 
+  // Monto escrito a mano → número ≥ 0. Acepta coma decimal (uso venezolano):
+  // "350,50" → 350.5 · "1.234,56" → 1234.56 · "1,234.56" → 1234.56 · "$ 90" → 90
+  // Un solo separador seguido de exactamente 3 dígitos es de miles:
+  // "1.234" → 1234 y "1,234" → 1234 (en Venezuela "1.234" son mil doscientos…).
+  // Negativos, texto o valores no finitos → 0.
+  function parseMonto(v) {
+    if (typeof v === 'number') return isFinite(v) && v > 0 ? v : 0;
+    // Se ignoran espacios y símbolos de moneda; cualquier otra letra → inválido
+    var s = String(v == null ? '' : v).replace(/\s|\$|€|bs\.?|usd|eur/gi, '');
+    if (!s || !/^[\d.,]+$/.test(s)) return 0;
+    var coma = s.lastIndexOf(','), punto = s.lastIndexOf('.');
+    if (coma !== -1 && punto !== -1) {
+      // el separador que aparece último es el decimal
+      s = coma > punto ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    } else if (coma !== -1) {
+      // "1,234" → miles; "0,100" o "350,50" → decimal
+      s = (s.split(',').length > 2 || /^[1-9]\d{0,2},\d{3}$/.test(s)) ? s.replace(/,/g, '') : s.replace(',', '.');
+    } else if (s.split('.').length > 2 || /^[1-9]\d{0,2}\.\d{3}$/.test(s)) {
+      s = s.replace(/\./g, '');   // "1.234" / "1.234.567" → miles
+    }
+    var n = Number(s);
+    return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+  }
+
+  // Cantidad de pasajeros → entero ≥ 0
+  function parseCantidad(v) {
+    var n = Math.floor(Number(v));
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
   // montoTotal = adultos*tarifaAdulto + ninos*tarifaNino
   function calcularTotal(adultos, tarifaAdulto, ninos, tarifaNino) {
-    var a = Number(adultos) || 0;
-    var n = Number(ninos) || 0;
-    var ta = Number(tarifaAdulto) || 0;
-    var tn = Number(tarifaNino) || 0;
+    var a = parseCantidad(adultos);
+    var n = parseCantidad(ninos);
+    var ta = parseMonto(tarifaAdulto);
+    var tn = parseMonto(tarifaNino);
     return Math.round((a * ta + n * tn) * 100) / 100;
   }
 
@@ -91,11 +121,11 @@
     var o = opts || {};
     var hoy = toDate(o.fechaCotizacion) || new Date();
     var hosp = nochesYDias(o.checkIn, o.checkOut);
-    var adultos = Number(o.adultos) || 0;
-    var ninos = Number(o.ninos) || 0;
-    var infantes = Number(o.infantes) || 0;
-    var ta = Number(o.tarifaPorAdulto) || 0;
-    var tn = Number(o.tarifaPorNino) || 0;
+    var adultos = parseCantidad(o.adultos);
+    var ninos = parseCantidad(o.ninos);
+    var infantes = parseCantidad(o.infantes);
+    var ta = parseMonto(o.tarifaPorAdulto);
+    var tn = parseMonto(o.tarifaPorNino);
     var v = function (valor, fallback) {
       return (valor === undefined || valor === null || valor === '') ? fallback : String(valor);
     };
@@ -145,6 +175,7 @@
         servicio: v(o.servicio, ''),
         noches: hosp.noches,
         dias: hosp.dias,
+        fechasInvertidas: !!hosp.invertidas,
       },
       pasajeros: {
         adultos: adultos,
@@ -169,6 +200,8 @@
     simboloMoneda: simboloMoneda,
     formatMoney: formatMoney,
     calcularTotal: calcularTotal,
+    parseMonto: parseMonto,
+    parseCantidad: parseCantidad,
     generadorIdCotizacion: generadorIdCotizacion,
     buildQuote: buildQuote,
   };

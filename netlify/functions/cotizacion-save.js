@@ -3,7 +3,7 @@
 // Requiere: quote:create (cualquier usuario autenticado)
 
 const { query } = require('./_lib/db');
-const { verificarAuth, puede, ok, error, handleOptions, fallo } = require('./_lib/auth');
+const { verificarAuth, puede, ok, error, handleOptions, fallo, leerJSON, errorHttp } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
@@ -12,8 +12,19 @@ exports.handler = async (event) => {
     const usuario = await verificarAuth(event);
     if (!puede(usuario, 'quote:create')) return error('Sin permisos', 403);
 
-    const cot = JSON.parse(event.body || '{}');
-    if (!cot.idCotizacion) return error('Falta idCotizacion', 400);
+    const cot = leerJSON(event);
+    if (typeof cot.idCotizacion !== 'string' || !cot.idCotizacion.trim() || cot.idCotizacion.length > 100) {
+      return error('idCotizacion debe ser un texto (máx. 100 caracteres)', 400);
+    }
+    // Montos y pasajeros: números finitos ≥ 0 dentro de lo que admite la
+    // columna numeric(12,2). Fuera de rango es un error del cliente, no un 500.
+    const MAX_MONTO = 9999999999.99;
+    const numero = (v, campo, max) => {
+      if (v == null || v === '') return 0;
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0 || n > max) throw errorHttp(`${campo} fuera de rango`, 400);
+      return n;
+    };
 
     const pax = cot.pasajeros || {};
     const tar = cot.tarifas || {};
@@ -32,11 +43,12 @@ exports.handler = async (event) => {
         monto_total = EXCLUDED.monto_total, datos_vuelo = EXCLUDED.datos_vuelo,
         datos_hospedaje = EXCLUDED.datos_hospedaje`,
       [
-        cot.idCotizacion, cot.plantillaId || null, usuario.id,
-        cot.estado || 'CONFIRMADO', cot.tipoPaquete || null,
-        Number(pax.adultos) || 0, Number(pax.ninos) || 0, Number(pax.infantes) || 0,
-        Number(tar.tarifaPorAdulto) || 0, Number(tar.tarifaPorNino) || 0,
-        tar.moneda || 'USD', Number(tar.montoTotal) || 0,
+        cot.idCotizacion.trim(), typeof cot.plantillaId === 'string' ? cot.plantillaId : null, usuario.id,
+        String(cot.estado || 'CONFIRMADO').slice(0, 50), cot.tipoPaquete ? String(cot.tipoPaquete).slice(0, 50) : null,
+        Math.floor(numero(pax.adultos, 'adultos', 1e6)), Math.floor(numero(pax.ninos, 'ninos', 1e6)),
+        Math.floor(numero(pax.infantes, 'infantes', 1e6)),
+        numero(tar.tarifaPorAdulto, 'tarifaPorAdulto', MAX_MONTO), numero(tar.tarifaPorNino, 'tarifaPorNino', MAX_MONTO),
+        String(tar.moneda || 'USD').slice(0, 10), numero(tar.montoTotal, 'montoTotal', MAX_MONTO),
         cot.vuelo ? JSON.stringify(cot.vuelo) : null,
         cot.hospedaje ? JSON.stringify(cot.hospedaje) : null,
       ]);

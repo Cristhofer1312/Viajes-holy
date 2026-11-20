@@ -3,13 +3,13 @@
 // Requiere: user:activate con restricción de rango jerárquico
 
 const { query } = require('./_lib/db');
-const { verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo } = require('./_lib/auth');
+const { verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo, leerJSON } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
   try {
     const actor = await verificarAuth(event);
-    const { id } = JSON.parse(event.body || '{}');
+    const { id } = leerJSON(event);
     if (!id) return error('Falta id del usuario', 400);
 
     // El objetivo incluye su rango para que puede() evalúe la jerarquía

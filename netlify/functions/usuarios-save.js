@@ -7,14 +7,14 @@
 
 const { query } = require('./_lib/db');
 const token = require('./_lib/token');
-const { verificarAuth, puede, ok, error, handleOptions, fallo } = require('./_lib/auth');
+const { verificarAuth, puede, ok, error, handleOptions, fallo, leerJSON } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
   try {
     const actor = await verificarAuth(event);
 
-    const raw = JSON.parse(event.body || '{}');
+    const raw = leerJSON(event);
     const email = typeof raw.email === 'string' ? raw.email.trim().toLowerCase() : '';
     const nombre = typeof raw.nombre === 'string' ? raw.nombre.trim() : '';
     const rol = raw.rol;

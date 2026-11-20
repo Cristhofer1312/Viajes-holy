@@ -10,14 +10,14 @@
 
 const { query } = require('./_lib/db');
 const token = require('./_lib/token');
-const { verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo } = require('./_lib/auth');
+const { verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo, leerJSON } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
   try {
     const actor = await verificarAuth(event);
 
-    const { id, newPass } = JSON.parse(event.body || '{}');
+    const { id, newPass } = leerJSON(event);
     if (!id) return error('Falta id del usuario', 400);
     if (typeof newPass !== 'string' || newPass.length < 8) {
       return error('La nueva contraseña debe tener al menos 8 caracteres', 400);

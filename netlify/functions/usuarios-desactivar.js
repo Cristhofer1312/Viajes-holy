@@ -7,14 +7,14 @@
 
 const { query } = require('./_lib/db');
 const {
-  verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo, adminsActivosRestantes,
+  verificarAuth, puede, ok, error, handleOptions, fallo, buscarObjetivo, adminsActivosRestantes, leerJSON,
 } = require('./_lib/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
   try {
     const actor = await verificarAuth(event);
-    const { id } = JSON.parse(event.body || '{}');
+    const { id } = leerJSON(event);
     if (!id) return error('Falta id del usuario', 400);
 
     const objetivo = await buscarObjetivo(id);

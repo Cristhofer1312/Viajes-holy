@@ -365,8 +365,9 @@
                             <div id="q-aerolinea-wrapper">
                                 <label
                                     class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Aerolínea</label>
-                                <input id="q-aerolinea" type="text" placeholder="AEROCARIBE"
+                                <input id="q-aerolinea" type="text" list="lista-aerolineas" autocomplete="off" placeholder="AEROCARIBE"
                                     class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-bold uppercase input-track">
+                                <datalist id="lista-aerolineas"></datalist>
                             </div>
                         </div>
 
@@ -586,13 +587,13 @@
                                 <label
                                     class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Tarifa
                                     por adulto</label>
-                                <input id="q-tarifa-ad" type="number" step="0.01" min="0" placeholder="0.00"
+                                <input id="q-tarifa-ad" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00"
                                     class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-sm font-bold input-track">
                             </div>
                             <div>
                                 <label
                                     class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Niño</label>
-                                <input id="q-tarifa-nin" type="number" step="0.01" min="0" placeholder="0.00"
+                                <input id="q-tarifa-nin" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00"
                                     class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-sm font-bold input-track">
                             </div>
                             <div>
@@ -607,6 +608,9 @@
                             </div>
                         </div>
 
+                        <p id="q-aviso-fechas" role="alert" class="hidden rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                            ⚠ La fecha de regreso (o check-out) es anterior a la de ida (o check-in). Revisa las fechas.
+                        </p>
                         <div class="acciones-cotizacion space-y-2">
                         <div id="q-total-chip"
                             class="rounded-2xl bg-holyPurple text-white p-4 flex items-center gap-3">
@@ -1022,7 +1026,7 @@
     <script src="js/session.js?v=1"></script>
     <script src="js/roles.js?v=1"></script>
     <script src="js/auth.js?v=3"></script>
-    <script src="js/quoteModel.js?v=4"></script>
+    <script src="js/quoteModel.js?v=7"></script>
     <script src="js/templateModel.js?v=4"></script>
     <script src="js/exporter.js?v=4"></script>
     <script src="js/imagedb.js?v=4"></script>
@@ -1031,8 +1035,8 @@
     <script src="js/pdfManager.js?v=7"></script>
     <script src="js/userService.js?v=2"></script>
     <script src="js/gestion.js?v=3"></script>
-    <script src="js/flightParser.js?v=1"></script>
-    <script src="js/app.js?v=15"></script>
+    <script src="js/flightParser.js?v=4"></script>
+    <script src="js/app.js?v=19"></script>
 
 <script>
     // Alto visible real (sin la barra del navegador móvil), por si el

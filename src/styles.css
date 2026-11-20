@@ -470,3 +470,243 @@ html.dark ::-webkit-scrollbar-thumb {
   height: 100%;
   object-fit: contain;
 }
+
+/* ===================================================================
+   INTERFAZ MÓVIL (<1024px)
+   - Barra de navegación inferior, al alcance del pulgar.
+   - Plantillas / Cotización: un panel a la vez (Datos | Vista previa),
+     cada uno con su propio scroll a pantalla completa.
+   - Total + Generar PDF fijos al pie del formulario de cotización.
+   - Tablas convertidas en tarjetas y objetivos táctiles de 44px.
+   El escritorio (≥1024px) no cambia.
+   =================================================================== */
+#nav-inferior { display: none; }
+
+@media screen and (max-width: 1023.98px) {
+  .topbar-movil { padding-top: calc(.5rem + env(safe-area-inset-top)); }
+
+  #nav-inferior {
+    display: flex;
+    flex-shrink: 0;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, .05);
+  }
+  html.dark #nav-inferior { background: #141414; border-top-color: rgba(255, 255, 255, .06); }
+  .nav-movil {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 12px;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-movil[hidden] { display: none; }
+  .nav-movil svg { width: 22px; height: 22px; }
+  .nav-movil:active { background: rgba(127, 41, 132, .08); }
+  .nav-movil[aria-current="page"] { color: #7f2984; }
+  .nav-movil[aria-current="page"] svg {
+    background: rgba(127, 41, 132, .12);
+    border-radius: 999px;
+    width: 52px;
+    padding: 0 15px;
+    box-sizing: border-box;
+  }
+  html.dark .nav-movil { color: #9ca3af; }
+  html.dark .nav-movil[aria-current="page"] { color: #d8a6e0; }
+
+  /* Vistas divididas: un panel a la vez */
+  .vista-dividida:not(.hidden) {
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .vista-dividida > .form-panel,
+  .vista-dividida > .panel-preview {
+    flex: 1 1 auto;
+    min-height: 0;
+    border-right: 0 !important;
+  }
+  .vista-dividida > .form-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .vista-dividida[data-panel="form"] > .panel-preview,
+  .vista-dividida[data-panel="preview"] > .form-panel { display: none !important; }
+
+  .selector-panel {
+    display: flex;
+    flex-shrink: 0;
+    gap: 4px;
+    margin: 8px 12px;
+    padding: 4px;
+    border-radius: 999px;
+    background: #f1f1f4;
+  }
+  html.dark .selector-panel { background: rgba(255, 255, 255, .08); }
+  .selector-panel button {
+    flex: 1;
+    min-height: 40px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #4b5563;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.dark .selector-panel button { color: #d1d5db; }
+  .selector-panel button[aria-selected="true"] {
+    background: #7f2984;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(127, 41, 132, .3);
+  }
+
+  /* Total + acciones siempre visibles al pie del formulario */
+  .acciones-cotizacion {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: 0 -1rem -1rem;
+    padding: .75rem 1rem;
+    background: rgba(255, 255, 255, .96);
+    border-top: 1px solid #eee;
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, .06);
+  }
+  html.dark .acciones-cotizacion { background: rgba(20, 20, 20, .96); border-top-color: rgba(255, 255, 255, .06); }
+  .acciones-cotizacion #q-total-chip { padding: .5rem .75rem .5rem 1rem; }
+  .acciones-cotizacion #q-total-chip span:last-child { font-size: 1.25rem; }
+  .acciones-cotizacion .grid { grid-template-columns: 1fr 1fr; }
+  .acciones-cotizacion .grid button { padding-top: .7rem; padding-bottom: .7rem; }
+
+  /* Vista previa: botones de página más fáciles de tocar */
+  .pg-btn { padding: .45rem .9rem !important; }
+
+  /* Objetivos táctiles de la lista de plantillas */
+  #tpl-list button[data-act] { padding: .625rem; }
+  #tpl-search { padding-top: .6rem; padding-bottom: .6rem; }
+}
+
+@media screen and (max-width: 640px) {
+  /* iOS hace zoom en campos con letra < 16px */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Tablas → tarjetas */
+  .tabla-tarjetas { min-width: 0 !important; }
+  .tabla-tarjetas thead { display: none; }
+  .tabla-tarjetas tbody tr {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: .5rem .75rem;
+    padding: .9rem 1rem;
+  }
+  .tabla-tarjetas tbody td { padding: 0 !important; }
+  .tabla-tarjetas tbody td:first-child,
+  .tabla-tarjetas tbody td:last-child,
+  .tabla-tarjetas tbody td[colspan] { grid-column: 1 / -1; }
+  .tabla-tarjetas tbody td:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    text-align: left !important;
+  }
+  .tabla-tarjetas tbody td:last-child button {
+    margin: 0 !important;
+    min-height: 40px;
+    padding: 0 .9rem;
+    border-radius: .75rem;
+    background: rgba(0, 0, 0, .04);
+    text-decoration: none !important;
+  }
+  html.dark .tabla-tarjetas tbody td:last-child button { background: rgba(255, 255, 255, .06); }
+
+  /* Modales a pantalla casi completa */
+  #modal-posada > div, [id^="modal-usuario"] > div { max-height: 92dvh; border-radius: 1.25rem; }
+}
+
+/* Alto real de la pantalla visible. En móvil 100vh incluye la zona tapada
+   por la barra del navegador y escondía la navegación inferior. */
+body { height: 100vh; height: 100dvh; height: var(--alto-app, 100dvh); }
+
+/* Lista de plantillas (sin edición abierta): sin selector Datos | Vista previa */
+@media screen and (max-width: 1023.98px) {
+  .vista-dividida.sin-selector > .selector-panel { display: none; }
+  .vista-dividida.sin-selector > .panel-preview { display: none !important; }
+}
+
+/* ===================================================================
+   ESCRITORIO: vista previa ocultable
+   Con la vista previa oculta el formulario ocupa todo el ancho, centrado
+   y ampliado (zoom) para leerlo y llenarlo con más comodidad.
+   Aplica a Cotización y a Plantillas (lista y edición).
+   =================================================================== */
+
+@media screen and (min-width: 1024px) {
+  .vista-dividida.preview-oculta > .panel-preview { display: none; }
+  .vista-dividida.preview-oculta > .form-panel {
+    grid-column: 1 / -1;
+    border-right: 0;
+    background: #f6f6f8;
+    overflow-y: auto;
+  }
+  html.dark .vista-dividida.preview-oculta > .form-panel { background: transparent; }
+  .vista-dividida.preview-oculta > .form-panel > :not(.hidden) {
+    zoom: 1.15;
+    /* el % se resuelve antes del zoom: dividir evita que se desborde */
+    width: min(860px, calc(100% / 1.15));
+    margin-left: auto;
+    margin-right: auto;
+    flex-shrink: 0;
+    background: #fff;
+  }
+  html.dark .vista-dividida.preview-oculta > .form-panel > :not(.hidden) { background: #141414; }
+  .vista-dividida.preview-oculta > .form-panel > :first-child { margin-top: 24px; border-radius: 16px 16px 0 0; }
+  .vista-dividida.preview-oculta > .form-panel > :last-child:not(.hidden) { margin-bottom: 24px; border-radius: 0 0 16px 16px; }
+}
+
+/* ===================================================================
+   MODO OSCURO: modales de gestión (usuarios, mi cuenta, posada) y
+   controles de la vista Usuarios. Estaban con colores claros fijos y
+   el texto (blanco en modo oscuro) quedaba ilegible.
+   =================================================================== */
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) > div {
+  background: #1e1e1e;
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, .06);
+}
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) > div > div {
+  border-color: rgba(255, 255, 255, .08);
+}
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) .bg-gray-50 { background: #181818; }
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) h3 { color: #f3f4f6; }
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) label { color: #9ca3af; }
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) :is(.text-gray-500, .text-gray-700) { color: #9ca3af; }
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) :is(input, select, textarea),
+html.dark [data-oscuro] {
+  background: #2a2a2a;
+  color: #f3f4f6;
+  border-color: #3a3a3a;
+}
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) :is(input, select, textarea):focus,
+html.dark [data-oscuro]:focus { border-color: #a82abc; }
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) ::placeholder,
+html.dark [data-oscuro]::placeholder { color: #6b7280; }
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) option,
+html.dark select[data-oscuro] option { background: #2a2a2a; color: #f3f4f6; }
+html.dark #usuario-pass-toggle { border-color: #3a3a3a; color: #d1d5db; }
+html.dark #cancelar-posada { color: #d1d5db; }
+html.dark #cancelar-posada:hover { background: rgba(255, 255, 255, .08); }
+html.dark :is(#modal-posada, #modal-usuario, #modal-usuario-editar, #modal-mi-cuenta) [id^="cerrar-"]:hover { color: #f3f4f6; }
+html.dark #drop-zone p { color: #d1d5db; }
+html.dark #btn-mi-cuenta:hover { border-color: #a82abc; }
+
+/* Lista de plantillas con vista previa oculta: cierra la tarjeta al pie */
+@media screen and (min-width: 1024px) {
+  .vista-dividida.preview-oculta #tpl-list:has(+ #tpl-editor.hidden) { margin-bottom: 24px; border-radius: 0 0 16px 16px; }
+}

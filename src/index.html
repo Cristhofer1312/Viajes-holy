@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Viajes Holy - Sistema de Cotizaciones</title>
     <script src="assets/js/tailwind.js?v=4"></script>
     <script>
@@ -33,10 +33,10 @@
         }
     </script>
     <link rel="stylesheet" href="assets/css/fonts.css?v=4">
-    <link rel="stylesheet" href="styles.css?v=10">
+    <link rel="stylesheet" href="styles.css?v=17">
 </head>
 
-<body class="h-screen h-dvh min-h-screen overflow-hidden overflow-x-clip flex flex-col dark:bg-[#0f0f0f] dark:text-white">
+<body class="overflow-hidden overflow-x-clip flex flex-col dark:bg-[#0f0f0f] dark:text-white">
 
     <!-- OVERLAY DE LOGIN — única puerta de entrada, controlada por auth.js -->
     <div id="login-overlay"
@@ -81,13 +81,10 @@
     <div id="app-shell" class="hidden flex-1 min-h-0 flex flex-col">
 
     <!-- TOPBAR MÓVIL — sustituye a la barra lateral en <1024px -->
-    <div class="no-print lg:hidden flex items-center gap-3 px-3 py-2 bg-holyPurple dark:bg-[#141414] text-white border-b border-white/10">
-        <button id="btn-menu" type="button" aria-label="Abrir menú"
-            class="shrink-0 rounded-lg p-2 hover:bg-white/10 active:bg-white/20">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
-                </path>
-            </svg>
+    <div class="no-print lg:hidden flex items-center gap-3 px-4 py-2 bg-holyPurple dark:bg-[#141414] text-white border-b border-white/10 topbar-movil">
+        <button id="btn-menu-top" type="button" aria-label="Abrir menú"
+            class="shrink-0 -ml-1 rounded-lg p-2 hover:bg-white/10 active:bg-white/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0">
             <img src="assets/img/Logo Holy.png" alt="Holy" class="w-full h-full object-cover">
@@ -217,7 +214,11 @@
         <main class="flex-1 flex flex-col min-w-0">
 
             <!-- VISTA: PLANTILLAS -->
-            <section id="view-plantillas" class="view hidden flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 max-lg:overflow-y-auto">
+            <section id="view-plantillas" data-panel="form" class="view vista-dividida sin-selector hidden flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12">
+                <div class="selector-panel no-print lg:hidden" role="tablist">
+                    <button type="button" role="tab" data-panel-btn="form" aria-selected="true">Datos</button>
+                    <button type="button" role="tab" data-panel-btn="preview" aria-selected="false">Vista previa</button>
+                </div>
                 <div
                     class="form-panel col-span-1 lg:col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414]">
                     <div
@@ -229,6 +230,11 @@
                             <p id="tpl-count" class="text-[11px] text-slate-800 dark:text-gray-400 font-semibold">0
                                 posadas</p>
                         </div>
+                        <button type="button" data-toggle-preview aria-pressed="false"
+                            class="toggle-preview hidden lg:inline-flex shrink-0 ml-auto items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-gray-300 hover:border-holyPurple hover:text-holyPurple dark:hover:text-primaryLight transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16v14H4zM14 5v14"/></svg>
+                            <span>Ocultar vista previa</span>
+                        </button>
                         <button id="btn-nueva"
                             class="px-3 py-2 rounded-xl bg-holyPurple dark:bg-gradient-to-br dark:from-primary dark:to-primaryDark text-white text-xs font-bold hover:bg-holyPurpleDark transition-all shadow-sm dark:shadow-[0_5px_15px_rgba(168,42,188,0.3)] dark:hover:shadow-[0_8px_20px_rgba(168,42,188,0.5)] dark:hover:-translate-y-0.5">+
                             Nueva</button>
@@ -243,7 +249,7 @@
                         class="hidden border-t border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] overflow-y-auto">
                     </div>
                 </div>
-                <div class="col-span-1 lg:col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
+                <div class="panel-preview col-span-1 lg:col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
                     <div
                         class="no-print px-4 py-2 flex items-center gap-2 flex-wrap bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
                         <span
@@ -260,20 +266,31 @@
                                 data-m="page2">Página 2</button>
                         </div>
                     </div>
-                    <div id="stage-plantillas" class="preview-stage flex-1 min-w-0 overflow-y-auto max-lg:overflow-y-visible p-3 sm:p-4"></div>
+                    <div id="stage-plantillas" class="preview-stage flex-1 min-w-0 overflow-y-auto p-3 sm:p-4"></div>
                 </div>
             </section>
 
             <!-- VISTA: COTIZACIÓN -->
-            <section id="view-cotizacion" class="view hidden flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 max-lg:overflow-y-auto">
+            <section id="view-cotizacion" data-panel="form" class="view vista-dividida hidden flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12">
+                <div class="selector-panel no-print lg:hidden" role="tablist">
+                    <button type="button" role="tab" data-panel-btn="form" aria-selected="true">Datos</button>
+                    <button type="button" role="tab" data-panel-btn="preview" aria-selected="false">Vista previa</button>
+                </div>
                 <div
                     class="form-panel col-span-1 lg:col-span-5 border-r border-gray-200 dark:border-white/5 flex flex-col min-h-0 bg-white dark:bg-[#141414] overflow-y-auto">
-                    <div class="px-4 py-3 border-b border-gray-100 dark:border-[#333333]">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-[#333333] flex items-center justify-between gap-2">
+                        <div>
                         <h2
                             class="text-holyPurple dark:text-primaryLight font-extrabold text-[15px] uppercase leading-tight">
                             Cotización Rápida</h2>
                         <p class="text-[11px] text-slate-800 dark:text-gray-400 font-semibold">Los datos variables de la
                             propuesta</p>
+                        </div>
+                        <button type="button" data-toggle-preview aria-pressed="false"
+                            class="toggle-preview hidden lg:inline-flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-gray-300 hover:border-holyPurple hover:text-holyPurple dark:hover:text-primaryLight transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h16v14H4zM14 5v14"/></svg>
+                            <span>Ocultar vista previa</span>
+                        </button>
                     </div>
                     <div class="p-4 space-y-4">
 
@@ -590,9 +607,11 @@
                             </div>
                         </div>
 
+                        <div class="acciones-cotizacion space-y-2">
                         <div id="q-total-chip"
-                            class="rounded-2xl bg-holyPurple text-white p-4 flex items-center justify-between">
-                            <span class="text-xs font-extrabold uppercase tracking-wide">Total</span>
+                            class="rounded-2xl bg-holyPurple text-white p-4 flex items-center gap-3">
+                            <span class="text-xs font-extrabold uppercase tracking-wide flex-1">Total</span>
+                            <button type="button" id="btn-ver-preview" class="lg:hidden rounded-full bg-white/15 active:bg-white/30 px-3 py-1.5 text-xs font-bold">Ver PDF</button>
                             <span class="font-poppins font-black text-2xl">$0</span>
                         </div>
 
@@ -616,9 +635,10 @@
                                 Imprimir
                             </button>
                         </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-span-1 lg:col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
+                <div class="panel-preview col-span-1 lg:col-span-7 flex flex-col min-h-0 bg-gray-100 dark:bg-transparent">
                     <div
                         class="no-print px-4 py-2 flex items-center gap-2 flex-wrap bg-white/70 dark:bg-[#141414]/70 border-b border-gray-200 dark:border-white/5">
                         <span
@@ -636,7 +656,7 @@
                                 data-m="page2">Página 2</button>
                         </div>
                     </div>
-                    <div id="stage-cotizacion" class="preview-stage flex-1 min-w-0 overflow-y-auto max-lg:overflow-y-visible p-3 sm:p-4"></div>
+                    <div id="stage-cotizacion" class="preview-stage flex-1 min-w-0 overflow-y-auto p-3 sm:p-4"></div>
                 </div>
             </section>
 
@@ -717,7 +737,7 @@
                     </div>
                     <div class="rounded-2xl bg-white dark:bg-[#141414] shadow-md overflow-hidden dark:border dark:border-white/5">
                         <div class="overflow-x-auto">
-                            <table class="w-full min-w-[560px]">
+                            <table class="tabla-tarjetas w-full min-w-[560px]">
                                 <thead>
                                     <tr class="border-b border-gray-100 dark:border-white/5 text-left">
                                         <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Posada</th>
@@ -743,7 +763,7 @@
                                 cotizador. El acceso es el email: el usuario entra inmediatamente tras ser creado.</p>
                         </div>
                         <div class="flex gap-2 shrink-0 self-start sm:self-auto">
-                            <button id="btn-mi-cuenta"
+                            <button id="btn-mi-cuenta" data-oscuro
                                 class="bg-white border-2 border-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl hover:border-holyPurple transition">
                                 Mi cuenta
                             </button>
@@ -754,9 +774,9 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-3 mb-4">
-                        <input type="text" id="usuarios-buscar" placeholder="Buscar por nombre o email..."
+                        <input type="text" id="usuarios-buscar" data-oscuro placeholder="Buscar por nombre o email..."
                             class="border-2 border-gray-200 rounded-xl p-2.5 text-sm font-medium focus:border-holyPurple outline-none flex-1 min-w-[140px]">
-                        <select id="usuarios-filtro-rol"
+                        <select id="usuarios-filtro-rol" data-oscuro
                             class="border-2 border-gray-200 rounded-xl p-2.5 text-sm font-bold text-gray-700 focus:border-holyPurple outline-none">
                             <option value="todos">Todos los roles</option>
                             <option value="admin">Admin</option>
@@ -767,7 +787,7 @@
                     </div>
                     <div class="rounded-2xl bg-white dark:bg-[#141414] shadow-md overflow-hidden dark:border dark:border-white/5">
                         <div class="overflow-x-auto">
-                            <table class="w-full min-w-[560px]">
+                            <table class="tabla-tarjetas w-full min-w-[560px]">
                                 <thead>
                                     <tr class="border-b border-gray-100 dark:border-white/5 text-left">
                                         <th class="p-2 sm:p-4 text-xs font-black text-gray-500 uppercase">Nombre / Email</th>
@@ -784,6 +804,30 @@
             </section>
         </main>
     </div>
+
+    <!-- NAVEGACIÓN INFERIOR MÓVIL (<1024px): al alcance del pulgar -->
+    <nav id="nav-inferior" class="no-print lg:hidden" aria-label="Navegación">
+        <button type="button" data-nav="cotizacion" class="nav-movil">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            <span>Cotizar</span>
+        </button>
+        <button type="button" data-nav="plantillas" class="nav-movil">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <span>Plantillas</span>
+        </button>
+        <button type="button" data-nav="gestion-posadas" class="nav-movil" hidden>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span>Posadas</span>
+        </button>
+        <button type="button" data-nav="usuarios" class="nav-movil" hidden>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <span>Usuarios</span>
+        </button>
+        <button type="button" id="btn-menu" class="nav-movil" aria-label="Más opciones">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <span>Más</span>
+        </button>
+    </nav>
 
     <!-- MODAL NUEVA POSADA — requiere template:create -->
     <div id="modal-posada" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
@@ -988,8 +1032,21 @@
     <script src="js/userService.js?v=2"></script>
     <script src="js/gestion.js?v=3"></script>
     <script src="js/flightParser.js?v=1"></script>
-    <script src="js/app.js?v=11"></script>
+    <script src="js/app.js?v=15"></script>
 
+<script>
+    // Alto visible real (sin la barra del navegador móvil), por si el
+    // navegador no soporta dvh o lo calcula con la barra replegada.
+    (function () {
+        function ajustar() {
+            var h = window.innerHeight; // no visualViewport: se encogería con el teclado
+            document.documentElement.style.setProperty('--alto-app', Math.round(h) + 'px');
+        }
+        ajustar();
+        window.addEventListener('resize', ajustar);
+        window.addEventListener('orientationchange', ajustar);
+    })();
+</script>
 </body>
 
 </html>

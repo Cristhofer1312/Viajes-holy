@@ -153,6 +153,10 @@
       b.className = 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ' +
         (on ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10');
     });
+    document.querySelectorAll('.nav-movil[data-nav]').forEach(function (b) {
+      if (b.dataset.nav === nav) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    });
     Object.keys(VISTAS_PERMISO).forEach(function (v) {
       var el = $('view-' + v);
       if (!el) return;
@@ -174,6 +178,40 @@
         b.style.display = 'none';
       }
     });
+    document.querySelectorAll('.nav-movil[data-nav]').forEach(function (b) {
+      if (vistaPermitida(b.dataset.nav)) b.removeAttribute('hidden');
+      else b.setAttribute('hidden', '');
+    });
+  }
+
+  // En escritorio la vista previa se puede ocultar: el formulario pasa a
+  // ocupar el ancho completo y se muestra más grande. La preferencia se
+  // recuerda en este equipo.
+  var CLAVE_PREVIEW_OCULTA = 'holy-preview-oculta';
+  function aplicarPreviewOculta(oculta) {
+    document.querySelectorAll('.vista-dividida').forEach(function (sec) {
+      sec.classList.toggle('preview-oculta', oculta);
+    });
+    document.querySelectorAll('[data-toggle-preview]').forEach(function (b) {
+      b.setAttribute('aria-pressed', oculta ? 'true' : 'false');
+      b.querySelector('span').textContent = oculta ? 'Mostrar vista previa' : 'Ocultar vista previa';
+    });
+    try { localStorage.setItem(CLAVE_PREVIEW_OCULTA, oculta ? '1' : '0'); } catch (e) { /* sin storage */ }
+    if (!oculta) ['stage-plantillas', 'stage-cotizacion'].forEach(fitStage);
+  }
+
+  // En móvil Plantillas y Cotización muestran un panel a la vez
+  // (formulario o vista previa) en vez de apilarlos con scroll anidado.
+  function mostrarPanel(seccion, panel) {
+    if (!seccion) return;
+    seccion.setAttribute('data-panel', panel);
+    seccion.querySelectorAll('[data-panel-btn]').forEach(function (b) {
+      b.setAttribute('aria-selected', b.dataset.panelBtn === panel ? 'true' : 'false');
+    });
+    if (panel === 'preview') {
+      var stage = seccion.querySelector('.preview-stage');
+      if (stage) { stage.scrollTop = 0; fitStage(stage.id); }
+    }
   }
 
   /**
@@ -227,6 +265,13 @@
     var sw = $('tpl-search-wrap');
     var btn = $('btn-nueva');
     if (!ed || !ls) return;
+    // Datos | Vista previa solo mientras se edita una plantilla; la lista
+    // de plantillas en móvil ocupa la pantalla completa sin selector.
+    var seccion = $('view-plantillas');
+    if (seccion) {
+      seccion.classList.toggle('sin-selector', !show);
+      mostrarPanel(seccion, 'form');
+    }
     if (show) {
       ed.classList.remove('hidden');
       ls.classList.add('hidden');
@@ -1094,13 +1139,32 @@
 
 
   function bindEvents() {
-    document.querySelectorAll('.nav-btn').forEach(function (b) {
+    document.querySelectorAll('.nav-btn, .nav-movil[data-nav]').forEach(function (b) {
       b.addEventListener('click', function () {
         setActiveNav(b.dataset.nav);
         if (b.dataset.nav === 'plantillas' && !$('tpl-editor').classList.contains('hidden')) {
           renderPlantillasPreview();
         }
       });
+    });
+
+    document.querySelectorAll('[data-toggle-preview]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        aplicarPreviewOculta(b.getAttribute('aria-pressed') !== 'true');
+      });
+    });
+    var previewOcultaGuardada = false;
+    try { previewOcultaGuardada = localStorage.getItem(CLAVE_PREVIEW_OCULTA) === '1'; } catch (e) { /* sin storage */ }
+    aplicarPreviewOculta(previewOcultaGuardada);
+
+    document.querySelectorAll('[data-panel-btn]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        mostrarPanel(b.closest('.vista-dividida'), b.dataset.panelBtn);
+      });
+    });
+    var verPdf = $('btn-ver-preview');
+    if (verPdf) verPdf.addEventListener('click', function () {
+      mostrarPanel($('view-cotizacion'), 'preview');
     });
 
     document.querySelectorAll('.pg-btn').forEach(function (b) {
@@ -1410,6 +1474,8 @@
 
     var btnMenu = $('btn-menu');
     if (btnMenu) btnMenu.addEventListener('click', abrirMenu);
+    var btnMenuTop = $('btn-menu-top');
+    if (btnMenuTop) btnMenuTop.addEventListener('click', abrirMenu);
     var menuOverlay = $('menu-overlay');
     if (menuOverlay) menuOverlay.addEventListener('click', cerrarMenu);
     // Al volver a desktop el drawer debe quedar neutro (translate solo en <1024px)

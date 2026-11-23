@@ -1,0 +1,37 @@
+✈️ *AEROLÍNEAS SOPORTADAS – COTIZADOR VIAJES HOLY*
+
+🇻🇪 *Venezolanas – vuelos regulares*
+• V0 – Conviasa
+• 9V – Avior Airlines
+• QL – Laser Airlines
+• ES – Estelar Airlines
+• RU / 5R – Rutaca Airlines
+• T9 – Turpial Airlines
+• O3 – Sasca Airlines
+• CV – Aerocaribe
+• CW – Aeropostal
+
+🇻🇪 *Venezolanas – chárter*
+• WW / AW – Venezolana (RAVSA)
+• BS – BlueStar Aviation (Los Roques)
+• G0 – Albatros _(suspendida temporalmente)_
+
+🌎 *Internacionales*
+• CM – Copa Airlines
+• AV – Avianca
+• G3 – GOL Linhas Aéreas
+• G6 – Global X
+• P5 – Wingo
+• 9R – Satena
+• DO – Sky High
+• DM – Arajet
+• IB – Iberia
+• UX – Air Europa
+• PU – Plus Ultra
+• TP – TAP Air Portugal
+• TK – Turkish Airlines
+• OB – Boliviana de Aviación
+• AA – American Airlines
+• CU – Cubana de Aviación
+
+ℹ️ Al pegar la línea del vuelo (ej: _CV1723M 23OCT FR CCSLRV SS1 0945 1025_) el sistema llena solo la aerolínea, la ruta, la fecha y las horas. Si el código no está en la lista, se conserva tal cual y avisa "código no registrado".

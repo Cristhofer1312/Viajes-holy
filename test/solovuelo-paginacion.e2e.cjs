@@ -32,7 +32,7 @@ const EQUIPAJES = {
     for (let n = 0; n <= 14; n++) {
       const r = await page.evaluate(async ({ n, equipaje }) => {
         const vuelos = Array.from({ length: n }, (_, i) => ({
-          tipo: i % 2 ? 'RETORNO' : 'IDA', origen: 'CARACAS', destino: 'LOS ROQUES',
+          tipo: i % 2 ? 'RETORNO' : 'IDA', aerolinea: ['AEROCARIBE', 'BOLIVIANA DE AVIACION', 'TURKISH AIRLINES'][i % 3], origen: 'CARACAS', destino: 'LOS ROQUES',
           fecha: '2026-12-10', salida: '09:45', llegada: '10:25', duracion: `V${i + 1}`,
         }));
         const q = Monext.buildQuote({ tipoPaquete: 'SOLO VUELO', pnr: 'FGTYH7', aerolinea: 'AEROCARIBE', equipaje, vuelos, adultos: 2, tarifaPorAdulto: 100 });

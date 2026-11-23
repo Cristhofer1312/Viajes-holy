@@ -130,6 +130,28 @@
       return (valor === undefined || valor === null || valor === '') ? fallback : String(valor);
     };
 
+    // Cada vuelo lleva su aerolínea. `o.aerolinea` (campo único antiguo)
+    // queda como valor por defecto para quien aún lo envíe.
+    var aeroDefecto = v(o.aerolinea, '');
+    var dinamicos = (o.vuelos || []).map(function (vu) {
+      return {
+        tipo: vu.tipo,
+        aerolinea: v(vu.aerolinea, aeroDefecto),
+        origen: vu.origen,
+        destino: vu.destino,
+        fecha: vu.fecha ? formatFechaLetra(vu.fecha).toUpperCase() : '',
+        salida: vu.salida,
+        llegada: vu.llegada,
+        duracion: vu.duracion
+      };
+    });
+    var aeroIda = v(o.aerolineaIda, aeroDefecto);
+    var aeroRet = v(o.aerolineaRetorno, aeroDefecto);
+    // Resumen para el encabezado: las aerolíneas distintas, en orden de uso
+    var usadas = dinamicos.length ? dinamicos.map(function (d) { return d.aerolinea; }) : [aeroIda, aeroRet];
+    var resumen = [];
+    usadas.forEach(function (a) { if (a && resumen.indexOf(a) === -1) resumen.push(a); });
+
     return {
       idCotizacion: o.idCotizacion || generadorIdCotizacion(hoy),
       fechaCotizacion: formatFechaCorta(hoy).toUpperCase(),
@@ -137,21 +159,13 @@
       tipoPaquete: v(o.tipoPaquete, 'PAQUETE COMPLETO'),
       plantillaId: v(o.plantillaId, ''),
       vuelo: {
-        aerolinea: v(o.aerolinea, ''),
+        // Más de dos: el detalle ya está en cada vuelo y el encabezado no cabe
+        aerolinea: resumen.length > 2 ? 'VARIAS AEROLÍNEAS' : resumen.join(' / '),
         pnr: v(o.pnr, ''),
         equipaje: v(o.equipaje, ''),
-        dinamicos: (o.vuelos || []).map(function(v) {
-          return {
-            tipo: v.tipo,
-            origen: v.origen,
-            destino: v.destino,
-            fecha: v.fecha ? formatFechaLetra(v.fecha).toUpperCase() : '',
-            salida: v.salida,
-            llegada: v.llegada,
-            duracion: v.duracion
-          };
-        }),
+        dinamicos: dinamicos,
         ida: {
+          aerolinea: aeroIda,
           origen: v(o.origenIda, 'CARACAS'),
           destino: v(o.destinoIda, 'LOS ROQUES'),
           fecha: o.fechaIda ? formatFechaLetra(o.fechaIda).toUpperCase() : '',
@@ -159,6 +173,7 @@
           llegada: v(o.llegadaIda, ''),
         },
         retorno: {
+          aerolinea: aeroRet,
           origen: v(o.origenRetorno, 'LOS ROQUES'),
           destino: v(o.destinoRetorno, 'CARACAS'),
           fecha: o.fechaRetorno ? formatFechaLetra(o.fechaRetorno).toUpperCase() : '',

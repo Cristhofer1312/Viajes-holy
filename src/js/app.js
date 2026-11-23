@@ -837,7 +837,8 @@
       fechaCotizacion: get('q-fecha-cot'),
       tipoPaquete: get('q-tipo'),
       plantillaId: state.qtPosadaId,
-      aerolinea: getU('q-aerolinea'),
+      aerolineaIda: getU('q-aerolinea-ida'),
+      aerolineaRetorno: getU('q-aerolinea-ret'),
 
       // Nuevos campos
       pnr: getU('q-pnr'),
@@ -875,7 +876,7 @@
         '  </div>' +
         '  <p class="vd-paste-msg hidden mt-1 text-[10px] font-bold"></p>' +
         '</div>' +
-        '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">' +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">' +
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Tipo</label>' +
         '  <select class="vd-tipo w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-xs input-track">' +
         '    <option value="IDA"' + (v.tipo === 'IDA' ? ' selected' : '') + '>IDA</option>' +
@@ -883,6 +884,8 @@
         '    <option value="RETORNO"' + (v.tipo === 'RETORNO' ? ' selected' : '') + '>RETORNO</option>' +
         '    <option value="CONEXIÓN"' + (v.tipo === 'CONEXIÓN' ? ' selected' : '') + '>CONEXIÓN</option>' +
         '  </select></div>' +
+        '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Aerolínea</label>' +
+        '  <input type="text" list="lista-aerolineas" autocomplete="off" placeholder="AEROCARIBE" class="vd-aerolinea w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-xs font-bold input-track uppercase" value="' + esc(v.aerolinea || '') + '"></div>' +
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Origen</label>' +
         '  <input type="text" class="vd-origen w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] dark:text-white px-2 py-1.5 text-xs input-track uppercase" value="' + esc(v.origen) + '"></div>' +
         '  <div><label class="block text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Destino</label>' +
@@ -925,6 +928,7 @@
     rows.forEach(function (row) {
       arr.push({
         tipo: row.querySelector('.vd-tipo').value.toUpperCase(),
+        aerolinea: row.querySelector('.vd-aerolinea').value.toUpperCase(),
         origen: row.querySelector('.vd-origen').value.toUpperCase(),
         destino: row.querySelector('.vd-destino').value.toUpperCase(),
         fecha: row.querySelector('.vd-fecha').value,
@@ -985,7 +989,7 @@
     var fixedCode = isIda ? p.destinoCode : p.origenCode;
     var fixedName = isIda ? p.destino : p.origen;
 
-    var aero = $('q-aerolinea');
+    var aero = $(isIda ? 'q-aerolinea-ida' : 'q-aerolinea-ret');
     if (aero) aero.value = p.aerolinea;
     var oEl = $(pre);
     if (oEl) oEl.value = isIda ? p.origen : p.destino;
@@ -1045,8 +1049,7 @@
     v.salida = p.salida;
     v.llegada = p.llegada;
     v.duracion = calcularDuracion(p.salida, p.llegada);
-    var aero = $('q-aerolinea');
-    if (aero) aero.value = p.aerolinea;
+    v.aerolinea = p.aerolinea;
     renderVuelosDinamicosUI();
     scheduleQuote();
     var avisosDin = (p.avisos || []).slice();
@@ -1453,7 +1456,7 @@
         if (qtyInput) qtyInput.value = qty;
         for (var i = 0; i < qty; i++) {
           state.vuelosDinamicos.push({
-            tipo: 'IDA', origen: '', destino: '', fecha: '', salida: '', llegada: '', duracion: ''
+            tipo: 'IDA', aerolinea: '', origen: '', destino: '', fecha: '', salida: '', llegada: '', duracion: ''
           });
         }
         renderVuelosDinamicosUI();

@@ -33,7 +33,7 @@
         }
     </script>
     <link rel="stylesheet" href="assets/css/fonts.css?v=4">
-    <link rel="stylesheet" href="styles.css?v=17">
+    <link rel="stylesheet" href="styles.css?v=21">
 </head>
 
 <body class="overflow-hidden overflow-x-clip flex flex-col dark:bg-[#0f0f0f] dark:text-white">
@@ -362,13 +362,8 @@
                                 <input id="q-fecha-cot" type="date"
                                     class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-semibold input-track">
                             </div>
-                            <div id="q-aerolinea-wrapper">
-                                <label
-                                    class="block text-[11px] font-extrabold text-slate-900 dark:text-gray-400 uppercase tracking-wide mb-1">Aerolínea</label>
-                                <input id="q-aerolinea" type="text" list="lista-aerolineas" autocomplete="off" placeholder="AEROCARIBE"
-                                    class="w-full rounded-xl border border-gray-200 dark:border-[#333333] bg-gray-50 dark:bg-[#2a2a2a] dark:text-white px-2 py-2 text-xs font-bold uppercase input-track">
-                                <datalist id="lista-aerolineas"></datalist>
-                            </div>
+                            <!-- La aerolínea ahora va en cada vuelo; sugerencias compartidas -->
+                            <datalist id="lista-aerolineas"></datalist>
                         </div>
 
                         <div id="q-vuelos-section" class="space-y-4">
@@ -390,6 +385,12 @@
                                     <p id="q-paste-ida-msg" class="hidden mt-1 text-[10px] font-bold"></p>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div class="col-span-1 sm:col-span-2">
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Aerolínea</label>
+                                        <input id="q-aerolinea-ida" type="text" list="lista-aerolineas" autocomplete="off" placeholder="AEROCARIBE"
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-bold uppercase input-track">
+                                    </div>
                                     <div>
                                         <label
                                             class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Origen</label>
@@ -453,6 +454,12 @@
                                     <p id="q-paste-ret-msg" class="hidden mt-1 text-[10px] font-bold"></p>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div class="col-span-1 sm:col-span-2">
+                                        <label
+                                            class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Aerolínea</label>
+                                        <input id="q-aerolinea-ret" type="text" list="lista-aerolineas" autocomplete="off" placeholder="AEROCARIBE"
+                                            class="w-full rounded-lg border border-gray-200 dark:border-[#333333] bg-white dark:bg-[#2a2a2a] dark:text-white px-2 py-1.5 text-xs font-bold uppercase input-track">
+                                    </div>
                                     <div>
                                         <label
                                             class="text-[10px] font-bold text-slate-800 dark:text-gray-400 uppercase">Origen
@@ -1026,17 +1033,17 @@
     <script src="js/session.js?v=1"></script>
     <script src="js/roles.js?v=1"></script>
     <script src="js/auth.js?v=3"></script>
-    <script src="js/quoteModel.js?v=7"></script>
+    <script src="js/quoteModel.js?v=9"></script>
     <script src="js/templateModel.js?v=4"></script>
     <script src="js/exporter.js?v=4"></script>
     <script src="js/imagedb.js?v=4"></script>
     <script src="js/storage.js?v=6"></script>
-    <script src="js/preview.js?v=11"></script>
+    <script src="js/preview.js?v=19"></script>
     <script src="js/pdfManager.js?v=7"></script>
     <script src="js/userService.js?v=2"></script>
     <script src="js/gestion.js?v=3"></script>
     <script src="js/flightParser.js?v=7"></script>
-    <script src="js/app.js?v=19"></script>
+    <script src="js/app.js?v=20"></script>
 
 <script>
     // Alto visible real (sin la barra del navegador móvil), por si el

@@ -1,6 +1,21 @@
 (function (root) {
   'use strict';
 
+  // Aerolínea de un tramo, bajo IDA/RETORNO (Paquete completo)
+  function aeroTramo(nombre) {
+    if (!nombre) return '';
+    return '<span class="v-aero inline-block mt-1 rounded-md bg-holyPurple/10 px-1.5 py-[2px] text-holyPurple font-montserrat font-bold text-[10.5px] leading-[1.3] tracking-normal uppercase">' + esc(nombre) + '</span>';
+  }
+
+  // Etiqueta de aerolínea de un vuelo (Solo vuelo): misma altura de línea
+  // que la fecha para no alterar la paginación.
+  function aeroEtiqueta(nombre) {
+    if (!nombre) return '<span></span>';
+    return '<span class="inline-flex items-center gap-1.5 rounded-full bg-[#800080] px-3 leading-[20px] text-white font-montserrat font-bold text-[12px] tracking-widest uppercase max-w-[60%] truncate shadow-sm">' +
+      '<svg class="w-3.5 h-3.5 shrink-0 transform rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16V14L13,9V3.5C13,2.67 12.33,2 11.5,2C10.67,2 10,2.67 10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/></svg>' +
+      '<span class="truncate">' + esc(nombre) + '</span></span>';
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -97,7 +112,7 @@
           var esRetorno = vd.tipo === 'RETORNO';
           return '<div class="vuelo-line text-[13px]">' +
             '<div class="v-avion">' + avionIcon(esRetorno) + '</div>' +
-            '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-bold text-[14px] tracking-wide">' + esc(vd.tipo) + '</span></div>' +
+            '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-bold text-[14px] tracking-wide">' + esc(vd.tipo) + '</span>' + aeroTramo(vd.aerolinea) + '</div>' +
             '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-extrabold leading-snug text-[13px]">' + esc(vd.origen) + '</p>' +
             '<p class="text-holyPurple font-montserrat font-extrabold leading-snug text-[13px]">' + esc(vd.destino) + '</p></div>' +
             '<div class="v-clock">' + clockIcon(!esRetorno) + '</div>' +
@@ -110,7 +125,7 @@
         filasDinamicas =
           '<div class="vuelo-line text-[13px]">' +
           '<div class="v-avion">' + avionIcon(false) + '</div>' +
-          '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-bold text-[14px] tracking-wide">IDA</span></div>' +
+          '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-bold text-[14px] tracking-wide">IDA</span>' + aeroTramo(v.ida.aerolinea) + '</div>' +
           '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-extrabold leading-snug text-[13px]">' + esc(v.ida.origen) + '</p>' +
           '<p class="text-holyPurple font-montserrat font-extrabold leading-snug text-[13px]">' + esc(v.ida.destino) + '</p></div>' +
           '<div class="v-clock">' + clockIcon(true) + '</div>' +
@@ -120,7 +135,7 @@
           '</div>' +
           '<div class="vuelo-line text-[13px]">' +
           '<div class="v-avion">' + avionIcon(true) + '</div>' +
-          '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-bold text-[14px] tracking-wide">RETORNO</span></div>' +
+          '<div class="v-tipo"><span class="text-holyPurple font-montserrat font-bold text-[14px] tracking-wide">RETORNO</span>' + aeroTramo(v.retorno.aerolinea) + '</div>' +
           '<div class="v-ciudad"><p class="text-holyPurple font-montserrat font-extrabold leading-snug text-[13px]">' + esc(v.retorno.origen) + '</p>' +
           '<p class="text-holyPurple font-montserrat font-extrabold leading-snug text-[13px]">' + esc(v.retorno.destino) + '</p></div>' +
           '<div class="v-clock">' + clockIcon(false) + '</div>' +
@@ -132,10 +147,7 @@
 
       seccionAereo =
         '<div>' +
-        '<div class="flex items-baseline gap-2 mb-1">' +
-        '<span class="text-holyPurple font-montserrat font-extrabold text-[15px] uppercase">AÉREO:</span>' +
-        '<span class="text-holyGray font-montserrat font-normal text-[15px] uppercase">' + esc(v.aerolinea) + '</span></div>' +
-        '<div class="w-full h-[1.5px] bg-holyLine mb-6"></div>' +
+        '<div class="w-full h-[1.5px] bg-holyLine mt-3 mb-6"></div>' +
         '<div class="vuelo-wrap">' +
         '<div class="vuelo-info">' + filasDinamicas + '</div>' +
         '<div class="vuelo-img"><img src="assets/img/Asientos.png" alt="Asientos Ejecutivos"></div>' +
@@ -314,7 +326,7 @@
       '<img src="assets/img/Logo Holy.png" alt="Logo Holy" class="w-full h-full object-contain"></div>' +
       '<div class="pt-1">' +
       '<div class="text-[17px] tracking-wide mb-0.5 uppercase"><span class="text-[#800080] font-montserrat font-extrabold">COTIZACIÓN AÉREA/ </span><span class="font-montserrat font-extrabold text-[#560B5B]">' + esc(v.pnr) + '</span></div>' +
-      '<div class="text-[13px] text-[#64748b] font-montserrat font-extrabold tracking-widest mb-1.5">AEROLÍNEA: <span class="font-normal uppercase">' + esc(v.aerolinea) + '</span></div>' +
+      '<div class="text-[13px] text-[#64748b] font-montserrat font-extrabold tracking-widest mb-1.5 max-w-[440px] truncate">AEROLÍNEA: <span class="font-normal uppercase">' + esc(v.aerolinea) + '</span></div>' +
       '<div class="flex items-center gap-1.5 text-[14px] text-[#475569] font-montserrat font-normal tracking-widest mb-1.5">' +
       'CONFIRMADO <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></div>' +
       '<div class="text-[13px] font-montserrat font-extrabold text-[#800080] tracking-wide uppercase">FECHA DE COTIZACIÓN: <span class="font-bold text-[#64748b]">' + esc(q.fechaCotizacion) + '</span></div>' +
@@ -345,8 +357,9 @@
       '<svg class="w-7 h-7 transform -rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16V14L13,9V3.5C13,2.67 12.33,2 11.5,2C10.67,2 10,2.67 10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/></svg>' +
       '</div></div>' +
       '<div class="flex-1">' +
-      '<div class="flex justify-end mb-1">' +
-      '<span class="text-[#800080] font-montserrat font-bold text-[14px] tracking-wider uppercase">FECHA: ' + esc(vd.fecha) + '</span>' +
+      '<div class="flex justify-between items-center gap-3 mb-1 h-5">' +
+      aeroEtiqueta(vd.aerolinea) +
+      '<span class="text-[#800080] font-montserrat font-bold text-[14px] tracking-wider uppercase whitespace-nowrap">FECHA: ' + esc(vd.fecha) + '</span>' +
       '</div>' +
       '<div class="grid grid-cols-12 items-center gap-4">' +
       '<div class="col-span-3"><span class="text-[#64748b] font-montserrat font-bold text-[12px] tracking-widest block uppercase">SALIDA</span></div>' +

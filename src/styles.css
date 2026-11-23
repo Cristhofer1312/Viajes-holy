@@ -432,9 +432,13 @@ html.dark ::-webkit-scrollbar-thumb {
   object-fit: contain;
 }
 .page-sheet .v-tipo {
-  flex: 0 0 84px;
-  width: 84px;
+  flex: 0 0 112px;
+  width: 112px;
   overflow: hidden;
+}
+.page-sheet .v-aero {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .page-sheet .v-ciudad {
   flex: 0 1 128px;

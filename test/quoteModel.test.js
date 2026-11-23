@@ -38,3 +38,20 @@ test('nochesYDias: fechas invertidas se marcan, no se inventan días', () => {
   assert.equal(inv.invertidas, true);
   assert.equal(M.buildQuote({ checkIn: '2026-12-20', checkOut: '2026-12-10' }).hospedaje.fechasInvertidas, true);
 });
+
+test('cada vuelo lleva su aerolínea y el encabezado las resume', () => {
+  const q = M.buildQuote({ aerolineaIda: 'AEROCARIBE', aerolineaRetorno: 'LASER AIRLINES' });
+  assert.equal(q.vuelo.ida.aerolinea, 'AEROCARIBE');
+  assert.equal(q.vuelo.retorno.aerolinea, 'LASER AIRLINES');
+  assert.equal(q.vuelo.aerolinea, 'AEROCARIBE / LASER AIRLINES');
+  const igual = M.buildQuote({ aerolineaIda: 'CONVIASA', aerolineaRetorno: 'CONVIASA' });
+  assert.equal(igual.vuelo.aerolinea, 'CONVIASA');
+  const sv = M.buildQuote({ tipoPaquete: 'SOLO VUELO', vuelos: [
+    { tipo: 'IDA', aerolinea: 'AVIOR AIRLINES' }, { tipo: 'CONEXIÓN', aerolinea: '' }, { tipo: 'RETORNO', aerolinea: 'RUTACA AIRLINES' }] });
+  assert.deepEqual(sv.vuelo.dinamicos.map((d) => d.aerolinea), ['AVIOR AIRLINES', '', 'RUTACA AIRLINES']);
+  assert.equal(sv.vuelo.aerolinea, 'AVIOR AIRLINES / RUTACA AIRLINES');
+  const tres = M.buildQuote({ vuelos: [{ aerolinea: 'A' }, { aerolinea: 'B' }, { aerolinea: 'C' }] });
+  assert.equal(tres.vuelo.aerolinea, 'VARIAS AEROLÍNEAS');
+  // compatibilidad: el campo único antiguo sigue sirviendo de valor por defecto
+  assert.equal(M.buildQuote({ aerolinea: 'ESTELAR AIRLINES' }).vuelo.ida.aerolinea, 'ESTELAR AIRLINES');
+});

@@ -19,6 +19,9 @@ exports.handler = async (event) => {
     if (typeof newPass !== 'string' || newPass.length < 8) {
       return error('La nueva contraseña debe tener al menos 8 caracteres', 400);
     }
+    if (token.excedeMaxPassword(newPass)) {
+      return error(`La nueva contraseña no puede superar los ${token.MAX_PASSWORD_BYTES} bytes`, 400);
+    }
 
     const hash = await token.hashPassword(newPass);
     const { rows } = await query(

@@ -8,8 +8,39 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
-const EXPIRA_HORAS = Number(process.env.JWT_EXPIRES_HOURS) || 168; // 7 días
-const BCRYPT_COST = 10;
+const EXPIRA_HORAS_DEFECTO = 24;
+const EXPIRA_HORAS_MIN = 1;
+const EXPIRA_HORAS_MAX = 168;
+const BCRYPT_COST_DEFECTO = 12;
+const MAX_PASSWORD_BYTES = 72;
+
+function calcularExpiraHoras(valor) {
+  if (valor === undefined || valor === null || String(valor).trim() === '') {
+    return EXPIRA_HORAS_DEFECTO;
+  }
+  const n = Number(valor);
+  if (!Number.isFinite(n)) return EXPIRA_HORAS_DEFECTO;
+  return Math.min(EXPIRA_HORAS_MAX, Math.max(EXPIRA_HORAS_MIN, n));
+}
+
+function calcularBcryptCost(valor) {
+  if (valor === undefined || valor === null || String(valor).trim() === '') {
+    return BCRYPT_COST_DEFECTO;
+  }
+  const n = Number(valor);
+  if (!Number.isFinite(n)) return BCRYPT_COST_DEFECTO;
+  return Math.min(14, Math.max(10, Math.trunc(n)));
+}
+
+const BCRYPT_COST = calcularBcryptCost(process.env.BCRYPT_COST);
+
+function expiraHoras() {
+  return calcularExpiraHoras(process.env.JWT_EXPIRES_HOURS);
+}
+
+function excedeMaxPassword(pass) {
+  return typeof pass !== 'string' || Buffer.byteLength(pass, 'utf8') > MAX_PASSWORD_BYTES;
+}
 
 function secreto() {
   const s = process.env.JWT_SECRET;
@@ -34,7 +65,7 @@ function emitir(usuario) {
     sub: usuario.id,
     v: usuario.sesion_version,
     iat: ahora,
-    exp: ahora + EXPIRA_HORAS * 3600,
+    exp: ahora + expiraHoras() * 3600,
   }));
   return `${header}.${payload}.${firmar(header + '.' + payload)}`;
 }
@@ -62,11 +93,17 @@ function verificar(token) {
 }
 
 function hashPassword(pass) {
+  if (excedeMaxPassword(pass)) {
+    const err = new Error(`La contraseña no puede superar los ${MAX_PASSWORD_BYTES} bytes`);
+    err.status = 400;
+    return Promise.reject(err);
+  }
   return bcrypt.hash(pass, BCRYPT_COST);
 }
 
-/** Compatible con los hashes $2a$ que exporta Supabase Auth. */
+/** Compatible con los hashes $2a$ que exporta Supabase Auth y con coste 10 previo. */
 function compararPassword(pass, hash) {
+  if (excedeMaxPassword(pass)) return Promise.resolve(false);
   if (typeof hash !== 'string' || !/^\$2[aby]\$\d\d\$.{53}$/.test(hash)) return Promise.resolve(false);
   return bcrypt.compare(pass, hash).catch(() => false);
 }
@@ -79,4 +116,17 @@ function hashParaComparacionCiega() {
   return hashFicticio;
 }
 
-module.exports = { emitir, verificar, hashPassword, compararPassword, hashParaComparacionCiega, EXPIRA_HORAS };
+module.exports = {
+  emitir,
+  verificar,
+  hashPassword,
+  compararPassword,
+  hashParaComparacionCiega,
+  calcularExpiraHoras,
+  excedeMaxPassword,
+  BCRYPT_COST,
+  MAX_PASSWORD_BYTES,
+  get EXPIRA_HORAS() {
+    return expiraHoras();
+  },
+};

@@ -106,7 +106,8 @@ function manejarApi(req, res, url) {
     };
     try {
       const handler = cargarHandler(funcPath);
-      const response = (await handler(event)) || {};
+      const { conEvento } = require('./netlify/functions/_lib/auth');
+      const response = (await conEvento(event, () => handler(event))) || {};
       res.writeHead(response.statusCode || 200,
         response.headers || { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(response.body || '');

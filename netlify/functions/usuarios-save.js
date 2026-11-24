@@ -28,6 +28,9 @@ exports.handler = async (event) => {
     if (typeof pass !== 'string' || pass.length < 8) {
       return error('La contraseña debe tener al menos 8 caracteres', 400);
     }
+    if (token.excedeMaxPassword(pass)) {
+      return error(`La contraseña no puede superar los ${token.MAX_PASSWORD_BYTES} bytes`, 400);
+    }
     if (!['admin', 'encargado', 'agente'].includes(rol)) return error('Rol inválido', 400);
 
     // Anti-escalación: el actor no puede otorgar un rol que no tenga en `asigna`

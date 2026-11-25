@@ -24,6 +24,16 @@
       .replace(/"/g, '&quot;');
   }
 
+  // Texto del pie de cada hoja de la cotización (aparece en el PDF impreso):
+  // "COTIZACIÓN DE VIAJE · [POSADA] · FECHA DE COTIZACIÓN: [fecha]".
+  // SOLO VUELO no tiene posada, así que se omite ese tramo (t sin nombrePosada).
+  function pieTexto(q, t) {
+    var partes = ['COTIZACIÓN DE VIAJE'];
+    if (t && t.nombrePosada) partes.push(String(t.nombrePosada));
+    partes.push('FECHA DE COTIZACIÓN: ' + (q && q.fechaCotizacion ? q.fechaCotizacion : '—'));
+    return partes.join(' · ');
+  }
+
   // Icono de reloj reutilizable
   function clockIcon(haciaDerecha) {
     return '<svg class="clock-icon" viewBox="0 0 36 36" fill="none">' +
@@ -180,7 +190,7 @@
     }
 
     return '' +
-      '<div id="page1" class="page-sheet px-12 pt-12 flex flex-col justify-between">' +
+      '<div id="page1" class="page-sheet px-12 pt-12 pb-8 flex flex-col justify-between">' +
       '<div class="flex-1 flex flex-col justify-between">' +
       '<div class="flex justify-between items-start">' +
       '<div class="flex items-start gap-4">' +
@@ -233,7 +243,14 @@
       '</div>' +
       '</div>' +
       banderaNoIncluye() +
+      piePagina(q, t) +
       '</div>';
+  }
+
+  // Pie de página (COMPLETO / SOLO HOSPEDAJE), igual en la hoja 1 y 2
+  function piePagina(q, t) {
+    return '<div class="pie-cotizacion text-center pt-4 border-t border-gray-100">' +
+      '<span class="text-[11px] text-slate-800 font-montserrat font-medium tracking-wider uppercase">' + esc(pieTexto(q, t)) + '</span></div>';
   }
 
   // ---- PÁGINA 2 ----
@@ -264,8 +281,7 @@
       '</div>' +
       renderPhotoGrid(t.imagenesBase64, t.layoutFotos) +
       '</div>' +
-      '<div class="text-center pt-4 border-t border-gray-100">' +
-      '<span class="text-[11px] text-slate-800 font-montserrat font-medium tracking-wider uppercase">' + esc(t.nombrePosada) + ' - ' + esc(t.destino) + '</span></div>' +
+      piePagina(q, t) +
       '</div>';
   }
 
@@ -430,11 +446,13 @@
       '</div>';
   }
 
-  function svBarra(pagina, total) {
+  function svBarra(pagina, total, textoPie) {
     var num = total > 1
       ? '<span class="text-white/90 font-montserrat font-bold text-[10px] tracking-widest">' + pagina + ' / ' + total + '</span>'
       : '';
-    return '<div class="w-full bg-[#800080] rounded-t-[2.5rem] shrink-0 flex items-center justify-center" style="height:30px">' + num + '</div>';
+    return '<div class="w-full bg-[#800080] rounded-t-[2.5rem] shrink-0 flex items-center justify-between px-14" style="height:30px">' +
+      '<span class="pie-cotizacion text-white/90 font-montserrat font-medium text-[10px] tracking-wider uppercase truncate">' + esc(textoPie) + '</span>' +
+      num + '</div>';
   }
 
   function renderSoloVueloPDF(t, q) {
@@ -458,7 +476,7 @@
         '<div class="sv-vuelos shrink-0">' + pg.vuelos.map(svVuelo).join('') + '</div>' +
         (pg.cierre ? svCierre(v, pax, tar, money) : '') +
         '</div>' +
-        svBarra(n, total) +
+        svBarra(n, total, pieTexto(q, null)) +
         '</div>';
     });
 

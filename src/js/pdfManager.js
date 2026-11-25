@@ -308,6 +308,11 @@
 
   function imprimir() {
     document.body.classList.add('printing');
+    // El navegador usa el título de la página como nombre sugerido del PDF.
+    var tituloPrevio = document.title;
+    if (typeof root.nombreArchivoPdf === 'function') {
+      try { document.title = root.nombreArchivoPdf(); } catch (e) {}
+    }
     var restaurarPaginas = prepararPrint();
     var restaurarModales = ocultarModalesParaPrint();
     // Inyectar estilos override DESPUÉS de Tailwind → gana la cascade
@@ -323,6 +328,7 @@
         if (done) return;
         done = true;
         document.body.classList.remove('printing');
+        document.title = tituloPrevio;
         // Orden LIFO: el aislamiento se deshace primero porque fue lo
         // último en aplicarse (capturó los ocultamientos previos).
         try { restaurarAislar(); } catch (e) {}

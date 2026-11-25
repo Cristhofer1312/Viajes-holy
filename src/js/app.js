@@ -549,6 +549,21 @@
     return function (id) { return m[id] = m[id] || { mode: 'all' }; };
   }();
 
+  // Último paquete de cotización renderizado: sirve para nombrar el PDF.
+  var ultimaCotizacion = null;
+
+  // Nombre del archivo PDF: nombre de la posada (p. ej. Posada_Kai); en SOLO VUELO, el PNR.
+  function nombreArchivoPdf() {
+    var t = (ultimaCotizacion && ultimaCotizacion.t) || {};
+    var q = (ultimaCotizacion && ultimaCotizacion.q) || {};
+    var limpiar = function (s) { return String(s || '').trim().replace(/\s+/g, '_').replace(/[\\\/:*?"<>|]/g, ''); };
+    var soloVuelo = String(q.tipoPaquete || '').toUpperCase() === 'SOLO VUELO';
+    var nombre = soloVuelo ? limpiar(q.vuelo && q.vuelo.pnr) : '';
+    if (!nombre) nombre = limpiar(t.nombrePosada);
+    return nombre || 'Cotización';
+  }
+  window.nombreArchivoPdf = nombreArchivoPdf;
+
   /**
    * Renderiza un stage de preview.
    * @param {string}  stageId       - ID del elemento stage en el DOM
@@ -557,6 +572,7 @@
    * @param {boolean} modoPlantilla - true = buildTemplate (sin precios/boletos)
    */
   function renderStage(stageId, t, q, modoPlantilla) {
+    if (!modoPlantilla && stageId === 'stage-cotizacion') ultimaCotizacion = { t: t, q: q };
     var p = modoPlantilla ? Preview.buildTemplate(t) : Preview.buildPreview(t, q);
     var mode = stageProps(stageId).mode || 'all';
     var stage = $(stageId);
